@@ -1,0 +1,25 @@
+.message {
+    border-radius:5px;
+    padding: 0.5em;
+}
+
+.message.ai {
+    background-color: gray;
+}
+
+.message.user {
+    background-color: lightblue;
+    margin-left: 2em
+}
+
+.input-form {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+}
+
+.input-form input[type='text'] {
+    margin-right: 1rem;
+    flex-grow: 1;
+    line-height: 2;
+}
