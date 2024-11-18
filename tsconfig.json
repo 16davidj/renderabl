@@ -1,0 +1,15 @@
+{ 
+    "include": ["src/**/*"],
+    "exclude" : ["node_modules", "dist"],
+    "compilerOptions": {
+        "target": "es5",
+        "jsx": "react-jsx",
+        "module": "es6",
+        "moduleResolution": "Node",
+        "outDir": "./dist",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "allowJs": true,
+        "sourceMap": true,
+    },
+}
