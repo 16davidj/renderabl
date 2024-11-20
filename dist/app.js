@@ -30,13 +30,18 @@ function App() {
                 sender: 'user'
             }];
         setMessages(appendMsgs);
-        const response = yield fetch("api/openai", {
+        const response = yield fetch("http://localhost:5500/api/openai", {
             method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ messages: appendMsgs })
         });
+        const responseString = JSON.parse(yield response.text());
         setMessages([...appendMsgs, {
                 sender: 'system',
-                text: yield response.text()
+                text: responseString.body
             }]);
     });
     return ((0, jsx_runtime_1.jsxs)("main", { children: [(0, jsx_runtime_1.jsx)("h1", { children: " [insert name here] chatbot " }), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("p", { children: "Start your renderabl chat here!" }), messages.map((message, index) => (0, jsx_runtime_1.jsx)("p", Object.assign({ className: "message " + message.sender }, { children: message.text }), index))] }), (0, jsx_runtime_1.jsxs)("form", Object.assign({ className: "input-form", onSubmit: newMessage }, { children: [(0, jsx_runtime_1.jsx)("input", { type: "text", placeholder: "Enter your message here!", value: formValue, onChange: s => setFormValue(s.currentTarget.value) }), (0, jsx_runtime_1.jsx)("input", { type: "submit", value: "Send" })] }))] }));

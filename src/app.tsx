@@ -16,7 +16,6 @@ function App() {
     const [messages, setMessages] = useState<Message[]> ([
 
     ])
-
     const newMessage: React.FormEventHandler = async(s) => {
         s.preventDefault()
         setFormValue('')
@@ -25,13 +24,18 @@ function App() {
             sender: 'user'
         }];
         setMessages(appendMsgs)
-        const response = await fetch("api/openai", {
+        const response = await fetch("http://localhost:5500/api/openai", {
             method:'POST',
-            body: JSON.stringify({messages: appendMsgs})
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+              },
+            body: JSON.stringify({ messages: appendMsgs })
         });
+        const responseString = JSON.parse(await response.text())
         setMessages([...appendMsgs, {
             sender: 'system',
-            text: await response.text()
+            text: responseString.body
         }])
     }
 
