@@ -20,8 +20,8 @@ function App() {
         s.preventDefault()
         setFormValue('')
         const appendMsgs: Message[] = [...messages, {
-            text: formValue,
-            sender: 'user'
+            role: 'user',
+            content: formValue
         }];
         setMessages(appendMsgs)
         const response = await fetch("http://localhost:5500/api/openai", {
@@ -32,10 +32,10 @@ function App() {
               },
             body: JSON.stringify({ messages: appendMsgs })
         });
-        const responseString = JSON.parse(await response.text())
+        const responseContent = await response.text()
         setMessages([...appendMsgs, {
-            sender: 'system',
-            text: responseString.body
+            role: 'system',
+            content: JSON.stringify(responseContent)
         }])
     }
 
@@ -45,7 +45,7 @@ function App() {
             <p>Start your renderabl chat here!</p>
             {
                 messages.map((message, index) =>
-                  <p key={index} className={"message " + message.sender}>{message.text}</p>
+                  <p key={index} className={"message " + message.role}>{message.content}</p>
                 )
             }
         </div>
