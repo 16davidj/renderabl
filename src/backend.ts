@@ -43,6 +43,7 @@ const openai = new OpenAI({apiKey: 'sk-proj-zZfcT7GGA57DnCfKLbYzk7V3lm_NHSUugkhl
 //     },
 // ];
 
+// TODO: interface this function by type
 async function personStructureOutput(prompt: Message[]): Promise<typeof PersonCardStructure> {
     let res:Response
     try {

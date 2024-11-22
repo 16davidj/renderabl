@@ -52,6 +52,7 @@ const openai = new openai_1.OpenAI({ apiKey: 'sk-proj-zZfcT7GGA57DnCfKLbYzk7V3lm
 //         },
 //     },
 // ];
+// TODO: interface this function by type
 function personStructureOutput(prompt) {
     return __awaiter(this, void 0, void 0, function* () {
         let res;

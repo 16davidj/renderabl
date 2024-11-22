@@ -1,15 +1,15 @@
-import './app.css'
+import './output.css'
 import {useState, React} from 'react'
 import {Message} from './types'
+import PersonCard from "./personcard";
 
-/**
- * The main app component.
- * 
- * Displays a basic chatbot interface.
- * 
- * @returns The JSX for the app component.
- */
-
+  function renderContent(message: Message) {
+    if (!message.renderCard) {
+        return (<p className={"message " + message.role}>{message.content}</p>)
+    } else {
+        return (<p className={"message " + message.role}><PersonCard {...message.card}/></p>)
+    }
+  }
 
 function App() {
     const [ formValue, setFormValue] = useState('')
@@ -33,10 +33,21 @@ function App() {
             body: JSON.stringify({ messages: appendMsgs })
         });
         const responseContent = await response.text()
-        setMessages([...appendMsgs, {
-            role: 'system',
-            content: JSON.stringify(responseContent)
-        }])
+        try {
+            const responseCard = JSON.parse(responseContent)
+            setMessages([...appendMsgs, {
+                role: 'system',
+                content: 'generated UI card rendered by response',
+                card: responseCard,
+                renderCard: true,
+            }])
+        } catch {
+            setMessages([...appendMsgs, {
+                role: 'system',
+                content: responseContent,
+                renderCard: false
+            }])
+        }
     }
 
     return (<main>
@@ -44,8 +55,8 @@ function App() {
         <div>
             <p>Start your renderabl chat here!</p>
             {
-                messages.map((message, index) =>
-                  <p key={index} className={"message " + message.role}>{message.content}</p>
+                messages.map((message) =>
+                  renderContent(message)
                 )
             }
         </div>
