@@ -19,7 +19,7 @@ const personcard_1 = __importDefault(require("./personcard"));
 function renderContent(message) {
     if (!message.renderCard) {
         if (message.role === 'user') {
-            return ((0, jsx_runtime_1.jsx)("div", Object.assign({ className: "flex flex-row-reverse" }, { children: (0, jsx_runtime_1.jsx)("p", Object.assign({ className: "message " + message.role + " inline-block mt-8 p-4 mr-4" }, { children: message.content })) })));
+            return ((0, jsx_runtime_1.jsx)("div", Object.assign({ className: "flex flex-row-reverse" }, { children: (0, jsx_runtime_1.jsx)("p", Object.assign({ className: "message " + message.role + " inline-block mt-8 p-2 mr-4" }, { children: message.content })) })));
         }
         else {
             return ((0, jsx_runtime_1.jsx)("div", Object.assign({ className: "flex" }, { children: (0, jsx_runtime_1.jsx)("p", Object.assign({ className: "message " + message.role + " inline-block mt-8 p-4" }, { children: message.content })) })));
@@ -66,7 +66,7 @@ function App() {
                 }]);
         }
     });
-    return ((0, jsx_runtime_1.jsxs)("main", { children: [(0, jsx_runtime_1.jsx)("h1", Object.assign({ class: "text-4xl font-bold text-center text-blue-600 my-4" }, { children: "Renderabl" })), messages.map((message) => renderContent(message)), (0, jsx_runtime_1.jsxs)("form", Object.assign({ className: "flex justify-between", onSubmit: newMessage }, { children: [(0, jsx_runtime_1.jsx)("input", { type: "text", className: "mr-4 flex-grow leading-8 mt-8 border rounded-md", placeholder: "Enter your message here!", value: formValue, onChange: s => setFormValue(s.currentTarget.value) }), (0, jsx_runtime_1.jsx)("input", { type: "submit", className: "border rounded-md mt-8 p-2 bg-gray-200", value: "Send" })] }))] }));
+    return ((0, jsx_runtime_1.jsxs)("main", { children: [(0, jsx_runtime_1.jsx)("h1", Object.assign({ class: "text-4xl font-bold text-center text-blue-600 my-4" }, { children: "Renderabl" })), messages.map((message) => renderContent(message)), (0, jsx_runtime_1.jsxs)("form", Object.assign({ className: "flex justify-between px-4", onSubmit: newMessage }, { children: [(0, jsx_runtime_1.jsx)("input", { type: "text", className: "mr-4 flex-grow leading-8 mt-8 border rounded-md p-2", placeholder: "Enter your message here!", value: formValue, onChange: s => setFormValue(s.currentTarget.value) }), (0, jsx_runtime_1.jsx)("input", { type: "submit", className: "border rounded-md mt-8 p-2 bg-gray-200", value: "Send" })] }))] }));
 }
 exports.default = App;
 //# sourceMappingURL=app.js.map

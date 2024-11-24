@@ -21,6 +21,8 @@
     margin-top: 2rem;
     border-width: 1px;
     border-radius: 5px;
+    padding-left: 1rem;
+    padding-right: 1rem;
 }
 
 .input-form input[type='text'] {

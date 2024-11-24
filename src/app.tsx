@@ -59,8 +59,8 @@ function App() {
                 renderContent(message)
             )
         }
-        <form className="flex justify-between" onSubmit={newMessage}>
-            <input type="text" className="mr-4 flex-grow leading-8 mt-8 border rounded-md" placeholder="Enter your message here!"
+        <form className="flex justify-between px-4" onSubmit={newMessage}>
+            <input type="text" className="mr-4 flex-grow leading-8 mt-8 border rounded-md p-2" placeholder="Enter your message here!"
             value = {formValue}
             onChange={s => setFormValue(s.currentTarget.value)}
              />

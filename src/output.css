@@ -10,7 +10,7 @@
 
 .message.user {
   background-color: lightblue;
-  margin-left: 2em;
+  margin-right: 2em;
   width: auto;
   flex-direction: row-reverse;
 }
@@ -21,6 +21,8 @@
   margin-top: 2rem;
   border-width: 1px;
   border-radius: 5px;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .input-form input[type='text'] {
@@ -729,6 +731,11 @@ video {
 
 .p-4 {
   padding:1rem;
+}
+
+.px-4 {
+  padding-left:1rem;
+  padding-right:1rem;
 }
 
 .text-left {
