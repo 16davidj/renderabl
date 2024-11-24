@@ -19,10 +19,12 @@
     display: flex;
     justify-content: space-between;
     margin-top: 2rem;
+    margin-bottom:2rem;
     border-width: 1px;
     border-radius: 5px;
     padding-left: 1rem;
     padding-right: 1rem;
+    padding-bottom: 4rem;
 }
 
 .input-form input[type='text'] {
@@ -40,6 +42,12 @@
 .person-card {
     justify-content: start;
     width: auto;
+}
+
+.main-div {
+    height:100vh;
+    flex-direction:column;
+    overflow-y: auto;
 }
 
 @tailwind base;

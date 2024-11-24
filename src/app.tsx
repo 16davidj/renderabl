@@ -52,19 +52,21 @@ function App() {
             }
     }
 
-    return (<main>
+    return (<main className="flex flex-col h-screen">
         <h1 class="text-4xl font-bold text-center text-blue-600 my-4">Renderabl</h1>
+        <div className="flex-grow overflow-y-auto px-4">
         {
             messages.map((message) =>
                 renderContent(message)
             )
         }
-        <form className="flex justify-between px-4" onSubmit={newMessage}>
-            <input type="text" className="mr-4 flex-grow leading-8 mt-8 border rounded-md p-2" placeholder="Enter your message here!"
+        </div>
+        <form className="flex justify-between px-4 mt-8 pb-4" onSubmit={newMessage}>
+            <input type="text" className="mr-4 flex-grow leading-8 border rounded-md p-2" placeholder="Enter your message here!"
             value = {formValue}
             onChange={s => setFormValue(s.currentTarget.value)}
              />
-            <input type="submit" className = "border rounded-md mt-8 p-2 bg-gray-200" value="Send" />
+            <input type="submit" className = "border rounded-md p-2 bg-gray-200" value="Send" />
         </form>
     </main>);
 }
