@@ -31,7 +31,6 @@ const router = express_1.default.Router();
 router.post('/api/openai', postCall);
 app.use(router);
 const openai = new openai_1.OpenAI({ apiKey: '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' });
-// TODO: function calling
 // const tools = [
 //     {
 //         type: "function",

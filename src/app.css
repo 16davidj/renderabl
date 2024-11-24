@@ -1,6 +1,7 @@
 .message {
     border-radius:5px;
     padding: 0.5em;
+    display: inline-block;
 }
 
 .message.system {
@@ -9,19 +10,34 @@
 
 .message.user {
     background-color: lightblue;
-    margin-left: 2em
+    margin-right: 2em;
+    width: auto;
+    flex-direction: row-reverse;
 }
 
 .input-form {
     display: flex;
     justify-content: space-between;
     margin-top: 2rem;
+    border-width: 1px;
+    border-radius: 5px;
 }
 
 .input-form input[type='text'] {
     margin-right: 1rem;
     flex-grow: 1;
     line-height: 2;
+}
+
+.send-button {
+    background-color: gray;
+    border-radius: 5px;
+    padding: 0.5em 1em;
+}
+
+.person-card {
+    justify-content: start;
+    width: auto;
 }
 
 @tailwind base;
