@@ -17,8 +17,16 @@ const openai_1 = require("openai");
 const types_1 = require("./types");
 const zod_1 = require("openai/helpers/zod");
 const cors_1 = __importDefault(require("cors"));
+const dotenv_1 = __importDefault(require("dotenv"));
+// Fake DB. Assume that this would be a network call in a real product
+const imageMap = new Map([
+    ["Nelson Mandela", "https://hips.hearstapps.com/hmg-prod/images/_photo-by-per-anders-petterssongetty-images.jpg?crop=1.00xw:1.00xh;0,0&resize=1200:*"],
+    ["Gordon Ramsay", "https://resizing.flixster.com/-XZAfHZM39UwaGJIFWKAE8fS0ak=/v3/t/assets/319794_v9_bb.jpg"],
+    ["Simone Biles", "https://img.olympics.com/images/image/private/t_1-1_300/f_auto/primary/bpg1hewhmku06znwbbnk"]
+]);
 const app = (0, express_1.default)();
 const port = process.env.PORT || 5500;
+dotenv_1.default.config();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: '*' }));
 app.use((req, res, next) => {
@@ -30,28 +38,8 @@ app.use((req, res, next) => {
 const router = express_1.default.Router();
 router.post('/api/openai', postCall);
 app.use(router);
-const openai = new openai_1.OpenAI({ apiKey: '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' });
-// const tools = [
-//     {
-//         type: "function",
-//         function: {
-//             name: "personStructureOutput",
-//             description: "Makes a call to OpenAI chat completion whenever the prompt asks about who someone is. Call this whenever the prompt resembles: 'Who is [person name]'",
-//             parameters: {
-//                 type: "object",
-//                 properties: {
-//                     order_id: {
-//                         type: "string",
-//                         description: "The customer's order ID.",
-//                     },
-//                 },
-//                 required: ["order_id"],
-//                 additionalProperties: false,
-//             },
-//         },
-//     },
-// ];
-// TODO: interface this function by type
+const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// TODO: interface this function by type instead of doing function calling
 function personStructureOutput(prompt) {
     return __awaiter(this, void 0, void 0, function* () {
         let res;
@@ -60,13 +48,22 @@ function personStructureOutput(prompt) {
                 model: "gpt-4o-mini",
                 messages: [{
                         role: "system",
-                        content: "You are a helpful assistant as a chatbot, responding to user input."
+                        content: "You are a helpful assistant."
                     }, ...prompt],
-                response_format: (0, zod_1.zodResponseFormat)(types_1.PersonCardStructure, "person_card_structure")
+                response_format: (0, zod_1.zodResponseFormat)(types_1.PersonCardStructure, "combined_structure"),
             });
             const result = response.choices[0].message.content;
-            const parsedOutput = JSON.parse(result);
-            return parsedOutput;
+            try {
+                const parsedOutput = JSON.parse(result);
+                if (parsedOutput.name) {
+                    // This would be an internal call in the companies API
+                    parsedOutput.profilePictureUrl = imageMap.get(parsedOutput.name);
+                }
+                return parsedOutput;
+            }
+            catch (parsingError) {
+                console.warn('Parsing error:', parsingError);
+            }
         }
         catch (error) {
             console.error('Error from OpenAI:', error);

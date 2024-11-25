@@ -1,6 +1,6 @@
 import React from "react";
 
-type PersonCardProps = {
+export type PersonCardProps = {
   name: string;
   summary: string;
   birthday: string;

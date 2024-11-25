@@ -3,9 +3,19 @@ import {OpenAI} from 'openai'
 import {Message, PersonCardStructure} from './types'
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
+import {PersonCardProps} from './personcard'
+import dotenv from 'dotenv'
+
+// Fake DB. Assume that this would be a network call in a real product
+const imageMap = new Map<string, string>([
+  ["Nelson Mandela", "https://hips.hearstapps.com/hmg-prod/images/_photo-by-per-anders-petterssongetty-images.jpg?crop=1.00xw:1.00xh;0,0&resize=1200:*"],
+  ["Gordon Ramsay", "https://resizing.flixster.com/-XZAfHZM39UwaGJIFWKAE8fS0ak=/v3/t/assets/319794_v9_bb.jpg"],
+  ["Simone Biles", "https://img.olympics.com/images/image/private/t_1-1_300/f_auto/primary/bpg1hewhmku06znwbbnk"]
+]);
 
 const app = express();
 const port = process.env.PORT || 5500;
+dotenv.config();
 
 app.use(express.json())
 app.use(cors({origin: '*'}))
@@ -19,44 +29,32 @@ app.use((req, res, next) => {
 const router = express.Router();
 router.post('/api/openai', postCall as (req: Request, res: Response) => void);
 app.use(router)
-const openai = new OpenAI({apiKey: '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'})
 
-// const tools = [
-//     {
-//         type: "function",
-//         function: {
-//             name: "personStructureOutput",
-//             description: "Makes a call to OpenAI chat completion whenever the prompt asks about who someone is. Call this whenever the prompt resembles: 'Who is [person name]'",
-//             parameters: {
-//                 type: "object",
-//                 properties: {
-//                     order_id: {
-//                         type: "string",
-//                         description: "The customer's order ID.",
-//                     },
-//                 },
-//                 required: ["order_id"],
-//                 additionalProperties: false,
-//             },
-//         },
-//     },
-// ];
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
-// TODO: interface this function by type
-async function personStructureOutput(prompt: Message[]): Promise<typeof PersonCardStructure> {
+// TODO: interface this function by type instead of doing function calling
+async function personStructureOutput(prompt: Message[]): Promise<PersonCardProps> {
     let res:Response
     try {
         const response = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [{
                 role: "system",
-                content: "You are a helpful assistant as a chatbot, responding to user input."
+                content: "You are a helpful assistant."
             }, ...prompt],
-            response_format: zodResponseFormat(PersonCardStructure, "person_card_structure")
+            response_format: zodResponseFormat(PersonCardStructure, "combined_structure"),
           })
           const result = response.choices[0].message.content;
-          const parsedOutput : typeof PersonCardStructure = JSON.parse(result)
-          return parsedOutput
+          try {
+            const parsedOutput : PersonCardProps = JSON.parse(result);
+            if (parsedOutput.name) {
+              // This would be an internal call in the companies API
+              parsedOutput.profilePictureUrl = imageMap.get(parsedOutput.name);
+            }
+            return parsedOutput;
+        } catch (parsingError) {
+            console.warn('Parsing error:', parsingError);
+        }
       } catch (error) {
         console.error('Error from OpenAI:', error)
       }
