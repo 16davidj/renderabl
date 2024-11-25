@@ -49,19 +49,20 @@ function App() {
             body: JSON.stringify({ messages: appendMsgs })
         });
         const responseContent = yield response.text();
-        try {
-            const responseCard = JSON.parse(responseContent);
+        const responseCard = JSON.parse(responseContent);
+        if (responseCard.type === "person") {
             setMessages([...appendMsgs, {
                     role: 'system',
-                    content: 'generated UI card rendered by response',
-                    card: responseCard,
+                    content: 'chat response with a UI card about the person.',
+                    card: responseCard.data,
                     renderCard: true,
                 }]);
         }
-        catch (_a) {
+        else if (responseCard.type === "string") {
+            const stringCard = responseCard.data;
             setMessages([...appendMsgs, {
                     role: 'system',
-                    content: responseContent,
+                    content: stringCard.chat_response,
                     renderCard: false
                 }]);
         }

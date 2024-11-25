@@ -48,22 +48,20 @@ function personStructureOutput(prompt) {
                 model: "gpt-4o-mini",
                 messages: [{
                         role: "system",
-                        content: "You are a helpful assistant."
+                        content: "You are a helpful assistant. Please only evaluate the last message by the user in this list."
                     }, ...prompt],
-                response_format: (0, zod_1.zodResponseFormat)(types_1.PersonCardStructure, "combined_structure"),
+                response_format: (0, zod_1.zodResponseFormat)(types_1.CombinedCardStructure, "combined_structure"),
             });
             const result = response.choices[0].message.content;
-            try {
-                const parsedOutput = JSON.parse(result);
-                if (parsedOutput.name) {
-                    // This would be an internal call in the companies API
-                    parsedOutput.profilePictureUrl = imageMap.get(parsedOutput.name);
-                }
-                return parsedOutput;
+            const parsedOutput = JSON.parse(result);
+            if (parsedOutput.type === "person" && parsedOutput.data.name) {
+                // This would be an internal call in the companies API
+                parsedOutput.data.profilePictureUrl = imageMap.get(parsedOutput.data.name);
+                console.log("hello", parsedOutput.data.name);
+                console.log("uhh image map", imageMap.get(parsedOutput.data.name));
             }
-            catch (parsingError) {
-                console.warn('Parsing error:', parsingError);
-            }
+            console.log(parsedOutput);
+            return parsedOutput;
         }
         catch (error) {
             console.error('Error from OpenAI:', error);

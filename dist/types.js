@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StringStructure = exports.PersonCardStructure = void 0;
+exports.CombinedCardStructure = exports.StringStructure = exports.PersonCardStructure = void 0;
 const zod_1 = require("zod");
 exports.PersonCardStructure = zod_1.z.object({
     name: zod_1.z.string(),
@@ -17,5 +17,9 @@ exports.PersonCardStructure = zod_1.z.object({
 });
 exports.StringStructure = zod_1.z.object({
     chat_response: zod_1.z.string().describe("response from the LLM")
+});
+exports.CombinedCardStructure = zod_1.z.object({
+    type: zod_1.z.enum(["person", "string"]),
+    data: zod_1.z.union([exports.PersonCardStructure, exports.StringStructure]),
 });
 //# sourceMappingURL=types.js.map

@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import {OpenAI} from 'openai'
-import {Message, PersonCardStructure} from './types'
+import {Message, PersonCardStructure, CombinedCardStructure} from './types'
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
 import {PersonCardProps} from './personcard'
@@ -36,25 +36,21 @@ const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 async function personStructureOutput(prompt: Message[]): Promise<PersonCardProps> {
     let res:Response
     try {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{
-                role: "system",
-                content: "You are a helpful assistant."
-            }, ...prompt],
-            response_format: zodResponseFormat(PersonCardStructure, "combined_structure"),
-          })
-          const result = response.choices[0].message.content;
-          try {
-            const parsedOutput : PersonCardProps = JSON.parse(result);
-            if (parsedOutput.name) {
-              // This would be an internal call in the companies API
-              parsedOutput.profilePictureUrl = imageMap.get(parsedOutput.name);
-            }
-            return parsedOutput;
-        } catch (parsingError) {
-            console.warn('Parsing error:', parsingError);
+      const response = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{
+              role: "system",
+              content: "You are a helpful assistant. Please only evaluate the last message by the user in this list."
+          }, ...prompt],
+          response_format: zodResponseFormat(CombinedCardStructure, "combined_structure"),
+        })
+        const result = response.choices[0].message.content;
+        const parsedOutput = JSON.parse(result);
+        if (parsedOutput.type === "person" && parsedOutput.data.name) {
+          // This would be an internal call in the companies API
+          parsedOutput.data.profilePictureUrl = imageMap.get(parsedOutput.data.name);
         }
+        return parsedOutput;
       } catch (error) {
         console.error('Error from OpenAI:', error)
       }
