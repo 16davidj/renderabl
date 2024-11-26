@@ -18,12 +18,7 @@ const types_1 = require("./types");
 const zod_1 = require("openai/helpers/zod");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
-// Fake DB. Assume that this would be a network call in a real product
-const imageMap = new Map([
-    ["Nelson Mandela", "https://hips.hearstapps.com/hmg-prod/images/_photo-by-per-anders-petterssongetty-images.jpg?crop=1.00xw:1.00xh;0,0&resize=1200:*"],
-    ["Gordon Ramsay", "https://resizing.flixster.com/-XZAfHZM39UwaGJIFWKAE8fS0ak=/v3/t/assets/319794_v9_bb.jpg"],
-    ["Simone Biles", "https://img.olympics.com/images/image/private/t_1-1_300/f_auto/primary/bpg1hewhmku06znwbbnk"]
-]);
+const fakedb_1 = require("./fakedb");
 const app = (0, express_1.default)();
 const port = process.env.PORT || 5500;
 dotenv_1.default.config();
@@ -50,23 +45,23 @@ function personStructureOutput(prompt) {
                         role: "system",
                         content: "You are a helpful assistant. Please only evaluate the last message by the user in this list."
                     }, ...prompt],
-                response_format: (0, zod_1.zodResponseFormat)(types_1.CombinedCardStructure, "combined_structure"),
+                response_format: (0, zod_1.zodResponseFormat)(types_1.StructuredCard, "combined_structure"),
             });
             const result = response.choices[0].message.content;
             const parsedOutput = JSON.parse(result);
-            if (parsedOutput.type === "person" && parsedOutput.data.name) {
+            if (parsedOutput.type === "person" && parsedOutput.data.profilePictureUrl) {
                 // This would be an internal call in the companies API
-                parsedOutput.data.profilePictureUrl = imageMap.get(parsedOutput.data.name);
-                console.log("hello", parsedOutput.data.name);
-                console.log("uhh image map", imageMap.get(parsedOutput.data.name));
+                parsedOutput.data.profilePictureUrl = (0, fakedb_1.getProfilePicture)(parsedOutput.data.name);
             }
-            console.log(parsedOutput);
             return parsedOutput;
         }
         catch (error) {
             console.error('Error from OpenAI:', error);
         }
     });
+}
+function monitoringGraphOutput() {
+    return { handlerName: "GetSampleHandler", inputData: (0, fakedb_1.getTrafficData)("GetSampleHandler") };
 }
 function postCall(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -78,6 +73,7 @@ function postCall(req, res) {
             return res.status(400).json({ error: "Prompt is required" });
         }
         const output = yield personStructureOutput(prompt);
+        //const output = monitoringGraphOutput();
         return res.status(200).json(output);
     });
 }

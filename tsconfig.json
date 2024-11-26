@@ -11,7 +11,8 @@
         "forceConsistentCasingInFileNames": true,
         "allowJs": true,
         "sourceMap": true,
-        "typeRoots": ["./node_modules/@types", "./src/types"]
+        "typeRoots": ["./node_modules/@types", "./src/types"],
+        "allowSyntheticDefaultImports": true
     },
     "ts-node": {
         "esm": true,

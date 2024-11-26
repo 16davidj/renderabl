@@ -1,18 +1,5 @@
 import React from "react";
-
-export type PersonCardProps = {
-  name: string;
-  summary: string;
-  birthday: string;
-  death?: string;
-  age: number;
-  occupation_best_known_for_five_or_less_words: string;
-  alma_mater: string;
-  hometown: string;
-  spouses?: string[];
-  awards?: string[];
-  profilePictureUrl?: string;
-};
+import { PersonCardProps } from "./types";
 
 const PersonCard: React.FC<PersonCardProps> = ({
   name,
@@ -20,7 +7,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
   birthday,
   death,
   age,
-  occupation_best_known_for_five_or_less_words,
+  occupation,
   alma_mater,
   hometown,
   spouses,
@@ -44,7 +31,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
       <div className="bg-gray-100 p-4 text-left">
         <h2 className="text-2xl font-semibold">{name}</h2>
         <p className="text-sm text-gray-600 italic">
-          {occupation_best_known_for_five_or_less_words}
+          {occupation}
         </p>
       </div>
 
