@@ -18,9 +18,7 @@ const react_1 = require("react");
 const personcard_1 = __importDefault(require("./personcard"));
 const monitorgraph_1 = __importDefault(require("./monitorgraph"));
 function renderContent(message) {
-    console.log("hi there");
-    console.log(message);
-    if (message.renderCard === "string") {
+    if (message.cardType === "string") {
         if (message.role === 'user') {
             return ((0, jsx_runtime_1.jsx)("div", { className: "flex flex-row-reverse", children: (0, jsx_runtime_1.jsx)("p", { className: "message " + message.role + " inline-block mt-8 p-2 mr-4", children: message.content }) }));
         }
@@ -28,11 +26,11 @@ function renderContent(message) {
             return ((0, jsx_runtime_1.jsx)("div", { className: "flex", children: (0, jsx_runtime_1.jsx)("p", { className: "message " + message.role + " inline-block mt-8 p-4", children: message.content }) }));
         }
     }
-    else if (message.renderCard === "person") {
-        return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(personcard_1.default, Object.assign({}, message.card)) }) }));
+    else if (message.cardType === "person") {
+        return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(personcard_1.default, Object.assign({}, message.personCard)) }) }));
     }
-    else if (message.renderCard === "graph") {
-        return ((0, jsx_runtime_1.jsx)("div", { children: (0, jsx_runtime_1.jsx)(monitorgraph_1.default, Object.assign({}, message.tempGraph)) }));
+    else if (message.cardType === "graph") {
+        return ((0, jsx_runtime_1.jsx)("div", { children: (0, jsx_runtime_1.jsx)(monitorgraph_1.default, Object.assign({}, message.graph)) }));
     }
 }
 function App() {
@@ -44,7 +42,7 @@ function App() {
         const appendMsgs = formValue.trim() !== '' ? [...messages, {
                 role: 'user',
                 content: formValue,
-                renderCard: "string"
+                cardType: "string"
             }] : messages;
         setMessages(appendMsgs);
         const response = yield fetch("http://localhost:5500/api/openai", {
@@ -55,35 +53,8 @@ function App() {
             },
             body: JSON.stringify({ messages: appendMsgs })
         });
-        const responseContent = yield response.text();
-        const responseCard = JSON.parse(responseContent);
-        //const graphCard : MonitoringGraphProps = JSON.parse(responseContent)
-        //console.log(graphCard)
-        if (responseCard.type === "person") {
-            const personCard = responseCard.data;
-            setMessages([...appendMsgs, {
-                    role: 'system',
-                    content: 'chat response with a UI card about the person.',
-                    card: personCard,
-                    renderCard: responseCard.type,
-                }]);
-        }
-        else if (responseCard.type === "string") {
-            const stringCard = responseCard.data;
-            setMessages([...appendMsgs, {
-                    role: 'system',
-                    content: stringCard.chat_response,
-                    renderCard: responseCard.type
-                }]);
-        }
-        // else if (responseCard.type === "graph") {
-        //     setMessages([...appendMsgs, {
-        //         role: 'system',
-        //         content: 'chat response with a graph of the traffic the user requested.',
-        //         tempGraph: graphCard,
-        //         renderCard: 'graph'
-        //     }])
-        // }
+        const responseMsg = JSON.parse(yield response.text());
+        setMessages([...appendMsgs, responseMsg]);
     });
     return ((0, jsx_runtime_1.jsxs)("main", { className: "flex flex-col h-screen", children: [(0, jsx_runtime_1.jsx)("h1", { className: "text-4xl font-bold text-center text-blue-600 my-4", children: "Renderabl" }), (0, jsx_runtime_1.jsx)("div", { className: "flex-grow overflow-y-auto px-4", children: messages.map((message) => renderContent(message)) }), (0, jsx_runtime_1.jsxs)("form", { className: "flex justify-between px-4 mt-8 pb-4", onSubmit: newMessage, children: [(0, jsx_runtime_1.jsx)("input", { type: "text", className: "mr-4 flex-grow leading-8 border rounded-md p-2", placeholder: "Enter your message here!", value: formValue, onChange: s => setFormValue(s.currentTarget.value) }), (0, jsx_runtime_1.jsx)("input", { type: "submit", className: "border rounded-md p-2 bg-gray-200", value: "Send" })] })] }));
 }

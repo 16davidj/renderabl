@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import {OpenAI} from 'openai'
-import {Message, StructuredCard, HandlerPerformanceMap, MonitoringGraphProps, PersonCardProps, CombinedCard} from './types'
+import {Message, MonitoringGraphProps, PersonCardProps, PersonCardStructure} from './types'
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -25,32 +25,138 @@ app.use(router)
 
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
-// TODO: interface this function by type instead of doing function calling
-async function personStructureOutput(prompt: Message[]): Promise<PersonCardProps> {
+const tools: OpenAI.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "chatAgent",
+      description: "Default to this whenever the other tools, such as personAgent, are not appropriate. Do not respond to the chat message itself.",
+      parameters: {
+        type: "object",
+        properties: {
+          messages: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                role: { type: "string", enum: ["system", "user", "assistant"], description: "The role of the sender of the chat message" },
+                content: { type: "string", description: "The content of the chat message" },
+              },
+              required: ["role", "content"],
+            },
+          },
+        },
+        required: ["messages"],
+      },
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "personAgent",
+      description: "Get information about a person. Call whenever you need to respond to a prompt that asks about a person.",
+      parameters: {
+        type: "object",
+        properties: {
+          person: { type: "string", description: "The name of the person to get information on." },
+        },
+        required: ["person"],
+      },
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "monitoringGraphAgent",
+      description: "Get monitoring graph data. Call whenever you need to respond to a prompt that asks for monitoring graph data of a handler.",
+      parameters: {
+        type: "object",
+        properties: {
+          handlerName: { type: "string", description: "The name of the handler to get monitoring graph data on." },
+        },
+        required: ["handlerName"],
+      },
+    }
+  },
+];
+
+// Use Structured Outputs and fake API calls to simulate agent.
+async function personAgent(person : string): Promise<Message> {
     let res:Response
     try {
+      const prompt : Message = { role: "user", content: person }
       const response = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [{
               role: "system",
-              content: "You are a helpful assistant. Please only evaluate the last message by the user in this list."
-          }, ...prompt],
-          response_format: zodResponseFormat(StructuredCard, "combined_structure"),
+              content: "You are a helpful assistant that gathers information about a particular person."
+          }, prompt],
+          response_format: zodResponseFormat(PersonCardStructure, "person_card_structure"),
         })
         const result = response.choices[0].message.content;
-        const parsedOutput = JSON.parse(result);
-        if (parsedOutput.type === "person" && parsedOutput.data.profilePictureUrl) {
+        const parsedOutput : PersonCardProps = JSON.parse(result);
+        if (parsedOutput.profilePictureUrl) {
           // This would be an internal call in the companies API
-          parsedOutput.data.profilePictureUrl = getProfilePicture(parsedOutput.data.name);
+          parsedOutput.profilePictureUrl = getProfilePicture(parsedOutput.name);
         }
-        return parsedOutput;
+        const messageResponse : Message = {
+          role: "system",
+          content: "chat response with a UI card about the person.",
+          personCard: parsedOutput,
+          cardType: "person"
+        }
+        return messageResponse;
       } catch (error) {
         console.error('Error from OpenAI:', error)
       }
 }
 
-function monitoringGraphOutput() : MonitoringGraphProps {
-  return { handlerName: "GetSampleHandler", inputData: getTrafficData("GetSampleHandler")};
+// Generic chat response agent.
+async function chatAgent(prompt : Message[]) : Promise<Message> {
+  let res:Response
+  try {
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+            role: "system",
+            content: "You are a helpful assistant that responds to chat messages."
+      }, ...prompt],
+    })
+    const messageResponse : Message = {
+      role: "system",
+      content: response.choices[0].message.content,
+      cardType: "string"
+    }
+    return messageResponse
+  } catch (error) {
+    console.error('Error from OpenAI:', error)
+  }
+}
+
+
+function monitoringGraphAgent(handlerName : string) : Message {
+  const response : Message = {
+    role: "system",
+    content: "chat response with monitoring graph data to render.",
+    graph: { handlerName: handlerName, inputData: getTrafficData(handlerName)},
+    cardType: "graph"
+  }
+  return response
+}
+
+async function agentDeciderAndRunner(responseString : string) : Promise<Message> {
+  const response = JSON.parse(responseString);
+  const toolCall = response.choices[0].message.tool_calls[0];
+  const functionName = toolCall.function.name;
+  const args = JSON.parse(toolCall.function.arguments);
+  switch (functionName) {
+    case "chatAgent":
+      return chatAgent(args.messages);
+    case "personAgent":
+      return personAgent(args.person);
+    case "monitoringGraphAgent":
+      return monitoringGraphAgent(args.handlerName);
+  } 
 }
 
 async function postCall(req:Request, res:Response) {
@@ -61,10 +167,16 @@ async function postCall(req:Request, res:Response) {
     if (!prompt) {
       return res.status(400).json({error: "Prompt is required"});
     }
-    const output = await personStructureOutput(prompt)
-    //const output = monitoringGraphOutput();
-
-    return res.status(200).json(output);
+    const functionCallResponse = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{
+        role: "system",
+        content: "You are an agent that determines what function in the tools to call given the user prompt. "
+    }, ...prompt],
+      tools: tools,
+    });
+    const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse))
+    return res.status(200).json(messageResponse);
 }
 
 app.listen(port, () => {

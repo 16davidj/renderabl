@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StructuredCard = exports.StringStructure = exports.PersonCardStructure = void 0;
+exports.PersonCardStructure = void 0;
 const zod_1 = require("zod");
 exports.PersonCardStructure = zod_1.z.object({
     name: zod_1.z.string(),
@@ -14,12 +14,5 @@ exports.PersonCardStructure = zod_1.z.object({
     spouses: zod_1.z.array(zod_1.z.string()),
     awards: zod_1.z.array(zod_1.z.string()),
     profilePictureUrl: zod_1.z.string().optional(),
-});
-exports.StringStructure = zod_1.z.object({
-    chat_response: zod_1.z.string().describe("response from the LLM")
-});
-exports.StructuredCard = zod_1.z.object({
-    type: zod_1.z.enum(["person", "string"]), // A "discriminator" field
-    data: zod_1.z.union([exports.PersonCardStructure, exports.StringStructure]),
 });
 //# sourceMappingURL=types.js.map

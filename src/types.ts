@@ -28,10 +28,6 @@ export const PersonCardStructure = z.object({
     profilePictureUrl: z.string().optional(),
   })
 
-export const StringStructure = z.object({
-  chat_response: z.string().describe("response from the LLM")
-})
-
 export interface TrafficData {
   timestamp: number; // Unix timestamp in milliseconds
   qps: number;
@@ -44,18 +40,10 @@ export type MonitoringGraphProps = {
   inputData: { timestamp: number; qps: number }[];
 };
 
-export const StructuredCard = z.object({
-  type: z.enum(["person", "string"]), // A "discriminator" field
-  data: z.union([PersonCardStructure, StringStructure]),
-});
-
-export type CombinedCard = z.infer<typeof StructuredCard>;
-export type StringCard = z.infer<typeof StringStructure>;
-
 export type Message = {
     role: 'system' | 'user' | 'assistant'
     content: string,
-    card ?: PersonCardProps,
-    tempGraph ?: MonitoringGraphProps,
-    renderCard ?: 'person' | 'string' | 'graph'
+    personCard ?: PersonCardProps,
+    graph ?: MonitoringGraphProps,
+    cardType ?: 'person' | 'string' | 'graph'
 }
