@@ -19,7 +19,7 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
 }) => {
   const getTourLogo = (tour: string) => {
     switch (tour) {
-        case "LIV": return "https://i.pinimg.com/originals/3c/64/8c/3c648c9fb9821071b78a3e171f085961.png";
+        case "LIV": return "https://i0.wp.com/golfblogger.com/wp-content/uploads/2022/05/liv-golf-logo.png?ssl=1";
         case "PGA": return "https://upload.wikimedia.org/wikipedia/en/thumb/7/77/PGA_Tour_logo.svg/1200px-PGA_Tour_logo.svg.png";
         case "DP": return "https://sportspro.com/wp-content/uploads/2023/03/DP-World-Tour-Logo.png";
         case "LPGA": return "https://cdn.cookielaw.org/logos/9c8a7e84-2713-496b-bb8b-4ab1c7aa9853/01917b66-958c-71d8-80e3-efefcbc9cdc9/9ed04020-943b-462b-ac02-b19496f9ce72/BRD23_LOGO_-_FLAT_RGB_VERT_(1).png"
