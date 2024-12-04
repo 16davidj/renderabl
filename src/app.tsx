@@ -3,6 +3,7 @@ import React, {useState} from 'react'
 import {Message} from './types'
 import PersonCard from "./personcard";
 import MonitoringGraph from './monitorgraph';
+import GolfPlayerCard from './golfcard';
 
 function renderContent(message: Message) {
     if (message.cardType === "string") {
@@ -15,6 +16,8 @@ function renderContent(message: Message) {
         return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><PersonCard {...message.personCard}/></p></div>)
     } else if (message.cardType === "graph") {
         return (<div><MonitoringGraph {...message.graph}/></div>)
+    } else if (message.cardType === "player") {
+        return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfPlayerCard {...message.golfPlayerCard}/></p></div>)
     }
 }
 

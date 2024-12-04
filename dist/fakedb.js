@@ -6,7 +6,8 @@ exports.getTrafficData = getTrafficData;
 const imageMap = new Map([
     ["Nelson Mandela", "https://hips.hearstapps.com/hmg-prod/images/_photo-by-per-anders-petterssongetty-images.jpg?crop=1.00xw:1.00xh;0,0&resize=1200:*"],
     ["Gordon Ramsay", "https://resizing.flixster.com/-XZAfHZM39UwaGJIFWKAE8fS0ak=/v3/t/assets/319794_v9_bb.jpg"],
-    ["Simone Biles", "https://img.olympics.com/images/image/private/t_1-1_300/f_auto/primary/bpg1hewhmku06znwbbnk"]
+    ["Simone Biles", "https://img.olympics.com/images/image/private/t_1-1_300/f_auto/primary/bpg1hewhmku06znwbbnk"],
+    ["Collin Morikawa", "https://cdn.vox-cdn.com/thumbor/Mv7vAJBCDHOhjR5SI3vGq9KhKVk=/0x0:5400x3600/1200x800/filters:focal(2709x527:3573x1391)/cdn.vox-cdn.com/uploads/chorus_image/image/73553167/2169089549.0.jpg"]
 ]);
 function getProfilePicture(name) {
     if (imageMap.has(name)) {

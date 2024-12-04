@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import {OpenAI} from 'openai'
-import {Message, MonitoringGraphProps, PersonCardProps, PersonCardStructure} from './types'
+import {GolfPlayerCardStructure, GolfPlayerCardProps, Message, MonitoringGraphProps, PersonCardProps, PersonCardStructure} from './types'
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -50,20 +50,20 @@ const tools: OpenAI.ChatCompletionTool[] = [
       },
     }
   },
-  {
-    type: "function",
-    function: {
-      name: "personAgent",
-      description: "Get information about a person. Call whenever you need to respond to a prompt that asks about a person.",
-      parameters: {
-        type: "object",
-        properties: {
-          person: { type: "string", description: "The name of the person to get information on." },
-        },
-        required: ["person"],
-      },
-    }
-  },
+  // {
+  //   type: "function",
+  //   function: {
+  //     name: "personAgent",
+  //     description: "Get information about a person. Call whenever you need to respond to a prompt that asks about a person.",
+  //     parameters: {
+  //       type: "object",
+  //       properties: {
+  //         person: { type: "string", description: "The name of the person to get information on." },
+  //       },
+  //       required: ["person"],
+  //     },
+  //   }
+  // },
   {
     type: "function",
     function: {
@@ -75,6 +75,20 @@ const tools: OpenAI.ChatCompletionTool[] = [
           handlerName: { type: "string", description: "The name of the handler to get monitoring graph data on." },
         },
         required: ["handlerName"],
+      },
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "golfPlayerAgent",
+      description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player.",
+      parameters: {
+        type: "object",
+        properties: {
+          player: { type: "string", description: "The name of the golf player to get information on." },
+        },
+        required: ["player"],
       },
     }
   },
@@ -109,6 +123,37 @@ async function personAgent(person : string): Promise<Message> {
       } catch (error) {
         console.error('Error from OpenAI:', error)
       }
+}
+
+// Use Structured Outputs and fake API calls to simulate golf player agent.
+async function golfPlayerAgent(player : string): Promise<Message> {
+  let res:Response
+  try {
+    const prompt : Message = { role: "user", content: player }
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{
+            role: "system",
+            content: "You are a helpful assistant that gathers information about a golf player."
+        }, prompt],
+        response_format: zodResponseFormat(GolfPlayerCardStructure, "golf_player_card_structure"),
+      })
+      const result = response.choices[0].message.content;
+      const parsedOutput : GolfPlayerCardProps = JSON.parse(result);
+      if (parsedOutput.name && parsedOutput.profilePictureUrl) {
+        // This would be an internal call in the companies API
+        parsedOutput.profilePictureUrl = getProfilePicture(parsedOutput.name);
+      }
+      const messageResponse : Message = {
+        role: "system",
+        content: "chat response with a UI card about the golf player.",
+        golfPlayerCard: parsedOutput,
+        cardType: "player"
+      }
+      return messageResponse;
+    } catch (error) {
+      console.error('Error from OpenAI:', error)
+    }
 }
 
 // Generic chat response agent.
@@ -152,10 +197,12 @@ async function agentDeciderAndRunner(responseString : string) : Promise<Message>
   switch (functionName) {
     case "chatAgent":
       return chatAgent(args.messages);
-    case "personAgent":
-      return personAgent(args.person);
+    // case "personAgent":
+    //   return personAgent(args.person);
     case "monitoringGraphAgent":
       return monitoringGraphAgent(args.handlerName);
+    case "golfPlayerAgent":
+      return golfPlayerAgent(args.player);
   } 
 }
 
