@@ -101,6 +101,20 @@ const tools = [
             },
         }
     },
+    {
+        type: "function",
+        function: {
+            name: "golfTournamentAgent",
+            description: "Get information about a golf tournament results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
+            parameters: {
+                type: "object",
+                properties: {
+                    tournament: { type: "string", description: "The name of the golf tournament to get information on." },
+                },
+                required: ["tournament"],
+            },
+        }
+    }
 ];
 // Use Structured Outputs and fake API calls to simulate agent.
 function personAgent(person) {
@@ -118,8 +132,8 @@ function personAgent(person) {
             });
             const result = response.choices[0].message.content;
             const parsedOutput = JSON.parse(result);
-            if (parsedOutput.name && parsedOutput.profilePictureUrl) {
-                parsedOutput.profilePictureUrl = yield getPictureUrl(parsedOutput.name);
+            if (parsedOutput.name) {
+                parsedOutput.profilePictureUrl = yield getPictureUrl(parsedOutput.name, 1.0);
             }
             const messageResponse = {
                 role: "system",
@@ -134,12 +148,15 @@ function personAgent(person) {
         }
     });
 }
-function getPictureUrl(topic) {
+function getPictureUrl(topic, ratio, size) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const CX = '70fc0f5d68c984853';
             const FILE_TYPE = 'jpg';
-            const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=3&fileType=${FILE_TYPE}`;
+            const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}`;
+            if (size) {
+                const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}&imgSize=${size}`;
+            }
             // Use fetch to call the Google API
             const response = yield fetch(googleApiUrl);
             if (!response.ok) {
@@ -147,10 +164,13 @@ function getPictureUrl(topic) {
             }
             const data = yield response.json();
             for (const item of data.items) {
-                const aspectRatio = item.image.width / item.image.height;
                 if (item.link && item.image.width > 0 && item.image.height > 0) {
-                    if (aspectRatio >= 1)
+                    const aspectRatio = item.image.width / item.image.height;
+                    console.log(aspectRatio);
+                    if (aspectRatio >= ratio) {
+                        console.log(item.link);
                         return item.link;
+                    }
                 }
             }
         }
@@ -176,15 +196,49 @@ function golfPlayerAgent(player) {
             });
             const result = response.choices[0].message.content;
             const parsedOutput = JSON.parse(result);
-            if (parsedOutput.name && parsedOutput.profilePictureUrl) {
+            if (parsedOutput.name) {
                 // Get picture from Google custom search
-                parsedOutput.profilePictureUrl = yield getPictureUrl(parsedOutput.name);
+                parsedOutput.profilePictureUrl = yield getPictureUrl(parsedOutput.name, 1.0);
             }
             const messageResponse = {
                 role: "system",
                 content: "chat response with a UI card about the golf player.",
                 golfPlayerCard: parsedOutput,
                 cardType: "player"
+            };
+            return messageResponse;
+        }
+        catch (error) {
+            console.error('Error from OpenAI:', error);
+        }
+    });
+}
+// Use Structured Outputs and fake API calls to simulate golf player agent.
+function golfTournamentAgent(tournament) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let res;
+        try {
+            const prompt = { role: "user", content: tournament + " golf tournament" };
+            const response = yield openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [{
+                        role: "system",
+                        content: "You are a helpful assistant that gathers information about a golf tournament from a certain year. If the prompt does not include the year, find the tournament results from the most recent year."
+                    }, prompt],
+                response_format: (0, zod_1.zodResponseFormat)(types_1.GolfTournamentCardStructure, "golf_tournament_card_structure"),
+            });
+            const result = response.choices[0].message.content;
+            const parsedOutput = JSON.parse(result);
+            if (parsedOutput.name) {
+                // Get picture from Google custom search
+                parsedOutput.course_picture_url = yield getPictureUrl(parsedOutput.name, 1.3, "large");
+            }
+            // TODO: make call to YouTube to get highlights to video
+            const messageResponse = {
+                role: "system",
+                content: "chat response with a UI card about the golf tournament.",
+                golfTournamentCard: parsedOutput,
+                cardType: "tournament"
             };
             return messageResponse;
         }
@@ -241,6 +295,8 @@ function agentDeciderAndRunner(responseString) {
                 return monitoringGraphAgent(args.handlerName);
             case "golfPlayerAgent":
                 return golfPlayerAgent(args.player);
+            case "golfTournamentAgent":
+                return golfTournamentAgent(args.tournament);
         }
     });
 }

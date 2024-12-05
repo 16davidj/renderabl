@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import {OpenAI} from 'openai'
-import {GolfPlayerCardStructure, GolfPlayerCardProps, Message, MonitoringGraphProps, PersonCardProps, PersonCardStructure} from './types'
+import {GolfPlayerCardStructure, GolfTournamentCardProps, GolfPlayerCardProps, Message, GolfTournamentCardStructure, PersonCardProps, PersonCardStructure} from './types'
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -92,6 +92,20 @@ const tools: OpenAI.ChatCompletionTool[] = [
       },
     }
   },
+  {
+    type: "function",
+    function: {
+      name: "golfTournamentAgent",
+      description: "Get information about a golf tournament results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
+      parameters: {
+        type: "object",
+        properties: {
+          tournament: { type: "string", description: "The name of the golf tournament to get information on." },
+        },
+        required: ["tournament"],
+      },
+    }
+  }
 ];
 
 // Use Structured Outputs and fake API calls to simulate agent.
@@ -109,8 +123,8 @@ async function personAgent(person : string): Promise<Message> {
         })
         const result = response.choices[0].message.content;
         const parsedOutput : PersonCardProps = JSON.parse(result);
-        if (parsedOutput.name && parsedOutput.profilePictureUrl) {
-          parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name);
+        if (parsedOutput.name) {
+          parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
         }
         const messageResponse : Message = {
           role: "system",
@@ -124,12 +138,15 @@ async function personAgent(person : string): Promise<Message> {
       }
 }
 
-async function getPictureUrl(topic : string) : Promise<string> {
+async function getPictureUrl(topic : string, ratio: number, size?: "medium" | "large"
+) : Promise<string> {
   try {
     const CX = '70fc0f5d68c984853';
     const FILE_TYPE = 'jpg';
-    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=3&fileType=${FILE_TYPE}`;
-
+    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}`;
+    if (size) {
+      const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}&imgSize=${size}`;
+    }
     // Use fetch to call the Google API
     const response = await fetch(googleApiUrl);
     if (!response.ok) {
@@ -137,10 +154,11 @@ async function getPictureUrl(topic : string) : Promise<string> {
     }
     const data = await response.json();
     for (const item of data.items) {
-      const aspectRatio = item.image.width / item.image.height;
       if (item.link && item.image.width > 0 && item.image.height > 0) {
-        if (aspectRatio >= 1)
-        return item.link
+        const aspectRatio = item.image.width / item.image.height;
+        if (aspectRatio >= ratio) {
+          return item.link
+        }
       }
     }
   } catch (error) {
@@ -164,9 +182,9 @@ async function golfPlayerAgent(player : string): Promise<Message> {
       })
       const result = response.choices[0].message.content;
       const parsedOutput : GolfPlayerCardProps = JSON.parse(result);
-      if (parsedOutput.name && parsedOutput.profilePictureUrl) {
+      if (parsedOutput.name) {
         // Get picture from Google custom search
-        parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name);
+        parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
       }
       const messageResponse : Message = {
         role: "system",
@@ -175,6 +193,38 @@ async function golfPlayerAgent(player : string): Promise<Message> {
         cardType: "player"
       }
       return messageResponse;
+    } catch (error) {
+      console.error('Error from OpenAI:', error)
+    }
+}
+
+// Use Structured Outputs and fake API calls to simulate golf player agent.
+async function golfTournamentAgent(tournament : string): Promise<Message> {
+  let res:Response
+  try {
+    const prompt : Message = { role: "user", content: tournament + " golf tournament" }
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{
+            role: "system",
+            content: "You are a helpful assistant that gathers information about a golf tournament from a certain year. If the prompt does not include the year, find the tournament results from the most recent year."
+        }, prompt],
+        response_format: zodResponseFormat(GolfTournamentCardStructure, "golf_tournament_card_structure"),
+      })
+    const result = response.choices[0].message.content;
+    const parsedOutput : GolfTournamentCardProps = JSON.parse(result);
+    if (parsedOutput.name) {
+      // Get picture from Google custom search
+      parsedOutput.course_picture_url = await getPictureUrl(parsedOutput.name, 1.3, "large");
+    }
+    // TODO: make call to YouTube to get highlights to video
+    const messageResponse : Message = {
+      role: "system",
+      content: "chat response with a UI card about the golf tournament.",
+      golfTournamentCard: parsedOutput,
+      cardType: "tournament"
+    }
+    return messageResponse;
     } catch (error) {
       console.error('Error from OpenAI:', error)
     }
@@ -227,6 +277,8 @@ async function agentDeciderAndRunner(responseString : string) : Promise<Message>
       return monitoringGraphAgent(args.handlerName);
     case "golfPlayerAgent":
       return golfPlayerAgent(args.player);
+    case "golfTournamentAgent":
+      return golfTournamentAgent(args.tournament);
   } 
 }
 

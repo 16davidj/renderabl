@@ -4,6 +4,7 @@ import {Message} from './types'
 import PersonCard from "./personcard";
 import MonitoringGraph from './monitorgraph';
 import GolfPlayerCard from './golfcard';
+import GolfTournamentCard from './golftournament';
 
 function renderContent(message: Message) {
     if (message.cardType === "string") {
@@ -18,6 +19,8 @@ function renderContent(message: Message) {
         return (<div><MonitoringGraph {...message.graph}/></div>)
     } else if (message.cardType === "player") {
         return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfPlayerCard {...message.golfPlayerCard}/></p></div>)
+    } else if (message.cardType === "tournament") {
+        return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfTournamentCard {...message.golfTournamentCard}/></p></div>)
     }
 }
 
