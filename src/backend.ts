@@ -4,7 +4,7 @@ import {GolfPlayerCardStructure, GolfPlayerCardProps, Message, MonitoringGraphPr
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { getProfilePicture, getTrafficData } from './fakedb';
+import { getTrafficData } from './fakedb';
 
 const app = express();
 const port = process.env.PORT || 5500;
@@ -109,9 +109,8 @@ async function personAgent(person : string): Promise<Message> {
         })
         const result = response.choices[0].message.content;
         const parsedOutput : PersonCardProps = JSON.parse(result);
-        if (parsedOutput.profilePictureUrl) {
-          // This would be an internal call in the companies API
-          parsedOutput.profilePictureUrl = getProfilePicture(parsedOutput.name);
+        if (parsedOutput.name && parsedOutput.profilePictureUrl) {
+          parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name);
         }
         const messageResponse : Message = {
           role: "system",
@@ -123,6 +122,31 @@ async function personAgent(person : string): Promise<Message> {
       } catch (error) {
         console.error('Error from OpenAI:', error)
       }
+}
+
+async function getPictureUrl(topic : string) : Promise<string> {
+  try {
+    const CX = '70fc0f5d68c984853';
+    const FILE_TYPE = 'jpg';
+    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=3&fileType=${FILE_TYPE}`;
+
+    // Use fetch to call the Google API
+    const response = await fetch(googleApiUrl);
+    if (!response.ok) {
+      throw new Error(`Google API error: ${response.statusText}`);
+    }
+    const data = await response.json();
+    for (const item of data.items) {
+      const aspectRatio = item.image.width / item.image.height;
+      if (item.link && item.image.width > 0 && item.image.height > 0) {
+        if (aspectRatio >= 1)
+        return item.link
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching data from Google API:', error);
+    return "";
+  }
 }
 
 // Use Structured Outputs and fake API calls to simulate golf player agent.
@@ -141,8 +165,8 @@ async function golfPlayerAgent(player : string): Promise<Message> {
       const result = response.choices[0].message.content;
       const parsedOutput : GolfPlayerCardProps = JSON.parse(result);
       if (parsedOutput.name && parsedOutput.profilePictureUrl) {
-        // This would be an internal call in the companies API
-        parsedOutput.profilePictureUrl = getProfilePicture(parsedOutput.name);
+        // Get picture from Google custom search
+        parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name);
       }
       const messageResponse : Message = {
         role: "system",

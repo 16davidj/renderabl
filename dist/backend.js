@@ -118,9 +118,8 @@ function personAgent(person) {
             });
             const result = response.choices[0].message.content;
             const parsedOutput = JSON.parse(result);
-            if (parsedOutput.profilePictureUrl) {
-                // This would be an internal call in the companies API
-                parsedOutput.profilePictureUrl = (0, fakedb_1.getProfilePicture)(parsedOutput.name);
+            if (parsedOutput.name && parsedOutput.profilePictureUrl) {
+                parsedOutput.profilePictureUrl = yield getPictureUrl(parsedOutput.name);
             }
             const messageResponse = {
                 role: "system",
@@ -132,6 +131,32 @@ function personAgent(person) {
         }
         catch (error) {
             console.error('Error from OpenAI:', error);
+        }
+    });
+}
+function getPictureUrl(topic) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const CX = '70fc0f5d68c984853';
+            const FILE_TYPE = 'jpg';
+            const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=3&fileType=${FILE_TYPE}`;
+            // Use fetch to call the Google API
+            const response = yield fetch(googleApiUrl);
+            if (!response.ok) {
+                throw new Error(`Google API error: ${response.statusText}`);
+            }
+            const data = yield response.json();
+            for (const item of data.items) {
+                const aspectRatio = item.image.width / item.image.height;
+                if (item.link && item.image.width > 0 && item.image.height > 0) {
+                    if (aspectRatio >= 1)
+                        return item.link;
+                }
+            }
+        }
+        catch (error) {
+            console.error('Error fetching data from Google API:', error);
+            return "";
         }
     });
 }
@@ -152,8 +177,8 @@ function golfPlayerAgent(player) {
             const result = response.choices[0].message.content;
             const parsedOutput = JSON.parse(result);
             if (parsedOutput.name && parsedOutput.profilePictureUrl) {
-                // This would be an internal call in the companies API
-                parsedOutput.profilePictureUrl = (0, fakedb_1.getProfilePicture)(parsedOutput.name);
+                // Get picture from Google custom search
+                parsedOutput.profilePictureUrl = yield getPictureUrl(parsedOutput.name);
             }
             const messageResponse = {
                 role: "system",
