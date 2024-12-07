@@ -1,21 +1,24 @@
-import React from "react";
+import React, {useState} from "react";
 
-import { GolfPlayerCardProps } from "./types";
+import { GolfPlayerCardProps, Message } from "./types";
 
 const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
   name,
+  year,
   height,
   birthday,
-  age,
   rank,
   tour,
   alma_mater,
   hometown,
   recent_win,
+  first_win,
   profilePictureUrl,
   sponsor,
   clubs,
-  ball
+  ball,
+  messages,
+  setMessages
 }) => {
   const getTourLogo = (tour: string) => {
     switch (tour) {
@@ -38,13 +41,30 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
       case "Srixon": return "https://upload.wikimedia.org/wikipedia/commons/f/f5/Srixon_golf_logo.PNG"
       case "Wilson": return "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wilson-logo.svg/1024px-Wilson-logo.svg.png"
       case "PXG": return "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png"
+      case "Nike": return "https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png"
+      case "Adams": return "https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png"
     }
     return null;
   }
 
   const tourLogo = getTourLogo(tour);
   const sponsorLogo = getSponsorLogo(sponsor);
-  console.log(sponsorLogo)
+  
+  const fetchWin = async (win: string) => {
+    const response = await fetch(`http://localhost:5500/api/openai`, {
+        method:'POST',
+        mode: 'cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ messages: [{role: 'user', content: win}] })
+    });
+    const responseMsg : Message = JSON.parse(await response.text())
+    setMessages([...messages, responseMsg])
+  }
+
+  const [isFirstWinHovered, setFirstWinIsHovered] = useState(false);
+  const [isRecentWinHovered, setRecentWinIsHovered] = useState(false);
 
   return (
     <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
@@ -71,7 +91,7 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
             />
           )}
           <div>
-            <h2 className="text-2xl font-semibold">{name}</h2>
+            <h2 className="text-2xl font-semibold">{year ? name + " (" + year + ")" : name }</h2>
             <p className="text-sm text-gray-600">Rank: {rank}</p>
           </div>
         </div>
@@ -91,7 +111,7 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
         {/* Birthday and Age */}
         <div className="text-sm text-gray-600 mb-2">
           <p>
-            <strong>Born:</strong> {birthday} ({age} years old)
+            <strong>Born:</strong> {birthday}
           </p>
         </div>
 
@@ -103,8 +123,19 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
           </div>
           <div>
             <p><strong>Alma Mater:</strong> {alma_mater}</p>
+            {first_win && (
+              <p onClick={() => fetchWin(first_win)}
+              onMouseEnter = {() => setFirstWinIsHovered(true)}
+              onMouseLeave = {() => setFirstWinIsHovered(false)}
+            style = {{cursor: 'pointer', textDecoration: isFirstWinHovered ? 'underline' : 'none'}}>
+                <strong>First Win:</strong> {first_win}
+              </p>
+            )}
             {recent_win && (
-              <p>
+              <p onClick={() => fetchWin(recent_win)}
+              onMouseEnter = {() => setRecentWinIsHovered(true)}
+              onMouseLeave = {() => setRecentWinIsHovered(false)}
+            style = {{cursor: 'pointer', textDecoration: isRecentWinHovered ? 'underline' : 'none'}}>
                 <strong>Recent Win:</strong> {recent_win}
               </p>
             )}

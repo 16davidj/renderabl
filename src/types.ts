@@ -30,33 +30,36 @@ export const PersonCardStructure = z.object({
 
 export type GolfPlayerCardProps = {
   name: string;
+  year?: number;
   height: string;
   birthday: string;
-  age: number;
   rank: number;
   tour: "LIV" | "PGA" | "DP" | "Korn Ferry" | "Asia" | "LPGA" | "Champions";
   alma_mater: string;
   hometown: string;
+  first_win?: string;
   recent_win?: string;
   profilePictureUrl?: string;
   sponsor?: string;
   clubs: string[];
   ball: string;
+  messages: Message[],
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 };
 
 export const GolfPlayerCardStructure = z.object({
   name: z.string(),
   height: z.string(),
   birthday: z.string(),
-  age: z.number(),
-  rank: z.number().describe("Rank the player is in the world according to the Official World Golf Ranking System."),
-  tour: z.enum(["LIV", "PGA", "LPGA", "DP", "Korn Ferry", "Asia", "Champions"]).describe("The logo of the tour the player most recently played in. One of LIV Golf, PGA Tour, DP World Tour, Korn Ferry Tour, Asia Tour, LPGA tour, PGA Tour Champions, etc. If the player moved from PGA to LIV, please default to LIV. See the LIV golf roster from livgolf.com/player, for the current PGA Tour roster, see pgatour.com/players, for Korn Ferry, see pgatour.com/korn-ferry-tour/players"),
+  rank: z.number().describe("Rank the player is in the world according to the Official World Golf Ranking System in the specified year."),
+  tour: z.enum(["LIV", "PGA", "LPGA", "DP", "Korn Ferry", "Asia", "Champions"]).describe("The logo of the tour the player played in the specified year. One of LIV Golf, PGA Tour, DP World Tour, Korn Ferry Tour, Asia Tour, LPGA tour, PGA Tour Champions, etc. If the player moved from PGA to LIV, please default to LIV. See the LIV golf roster from livgolf.com/player, for the current PGA Tour roster, see pgatour.com/players, for Korn Ferry, see pgatour.com/korn-ferry-tour/players"),
   alma_mater: z.string(),
   hometown: z.string(),
-  recent_win: z.string().describe("the most recent LIV, DP World Tour, or PGA Tour tournament win the player won. Please include the year of the tournament as well.").optional(),
-  sponsor: z.enum(["TaylorMade", "Titleist", "Callaway", "Ping", "Mizuno", "Srixon", "Wilson", "PXG"]).optional().describe("Information can be from pgaclubtracker.com, GolfWRX, or other websites"),
-  clubs: z.array(z.string()).describe("List of clubs the player is most recently used. Please include the shaft specs if possible."),
-  ball: z.string().describe("The ball the player most recently used, for example, Titleist Pro V1, Taylormade TP5x, etc.").optional(),
+  first_win: z.string().describe("the first LIV, DP World Tour, or PGA Tour tournament win the player won. Please include the year of the tournament as well."),
+  recent_win: z.string().describe("the most recent LIV, DP World Tour, or PGA Tour tournament win the player won up to the specified year. Please include the year of the tournament as well.").optional(),
+  sponsor: z.enum(["TaylorMade", "Titleist", "Callaway", "Ping", "Mizuno", "Srixon", "Wilson", "PXG", "Nike", "Adams"]).optional().describe("Information can be from pgaclubtracker.com, GolfWRX, or other websites. Sponsor should be the sponsor from that year."),
+  clubs: z.array(z.string()).describe("List of clubs the player used that year. Please do not include information about the shaft or grip. Just the club head. Clubs should be the clubs the player used in the specified year."),
+  ball: z.string().describe("The ball the player used that year, for example, Titleist Pro V1, Taylormade TP5x, etc.").optional(),
 })
 
 const PlayerScore = z.object({
@@ -80,6 +83,9 @@ export type GolfTournamentCardProps = {
   players: PlayerScoreType[];
   course_picture_url?: string;
   yt_highlights?: string;
+  year: number;
+  messages: Message[],
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 export const GolfTournamentCardStructure = z.object({
@@ -91,6 +97,7 @@ export const GolfTournamentCardStructure = z.object({
   weather: z.string(),
   purse: z.number(),
   players: z.array(PlayerScore).describe("The top 10 players from the tournament."),
+  year: z.number(),
 })
 
 export interface TrafficData {

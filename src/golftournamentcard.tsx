@@ -1,5 +1,5 @@
-import React from "react";
-import { GolfTournamentCardProps, PlayerScoreType } from "./types";
+import React, {useState} from "react";
+import { GolfTournamentCardProps, Message} from "./types";
 
 const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   name,
@@ -12,7 +12,26 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   players,
   course_picture_url,
   yt_highlights,
+  year,
+  messages,
+  setMessages
 }) => {
+    const fetchGolfPlayer = async (name: string, year: number) => {
+        const response = await fetch(`http://localhost:5500/api/openai`, {
+            method:'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ messages: [{role: 'user', content: name + " in " + year}] })
+        });
+        const responseMsg : Message = JSON.parse(await response.text())
+        setMessages([...messages, responseMsg])
+    }
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+    const handleMouseEnter = (index: number) => setHoveredIndex(index);
+    const handleMouseLeave = () => setHoveredIndex(null);
   return (
     <div className="inline-block w-3/4 max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
       {/* Course Picture */}
@@ -27,7 +46,7 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
       )}
 
       <div className="bg-gray-100 p-4">
-        <h2 className="text-2xl font-semibold">{name}</h2>
+        <h2 className="text-2xl font-semibold">{name + " " + "(" + year + ")"}</h2>
         <p className="text-sm text-gray-600">{course}</p>
       </div>
 
@@ -75,7 +94,10 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
                     className={`border-t ${index % 2 === 0 ? "bg-gray-100" : ""}`}
                   >
                     <td className="px-4 py-2 text-left">{player.position}</td>
-                    <td className="px-4 py-2 text-left">{player.name}</td>
+                    <td onClick={() => {fetchGolfPlayer(player.name, year)}}
+                        onMouseEnter = {() => handleMouseEnter(index)}
+                        onMouseLeave = {handleMouseLeave}
+                        style = {{cursor: 'pointer', textDecoration: hoveredIndex === index ? 'underline' : 'none',}} className="px-4 py-2 text-left">{player.name}</td>
                     <td className="px-4 py-2 text-center">
                       {player.round_scores[0]}
                     </td>

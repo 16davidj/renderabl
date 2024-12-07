@@ -17,33 +17,33 @@ require("./output.css");
 const react_1 = require("react");
 const personcard_1 = __importDefault(require("./personcard"));
 const monitorgraph_1 = __importDefault(require("./monitorgraph"));
-const golfcard_1 = __importDefault(require("./golfcard"));
-const golftournament_1 = __importDefault(require("./golftournament"));
-function renderContent(message) {
-    if (message.cardType === "string") {
-        if (message.role === 'user') {
-            return ((0, jsx_runtime_1.jsx)("div", { className: "flex flex-row-reverse", children: (0, jsx_runtime_1.jsx)("p", { className: "message " + message.role + " inline-block mt-8 p-2 mr-4", children: message.content }) }));
-        }
-        else {
-            return ((0, jsx_runtime_1.jsx)("div", { className: "flex", children: (0, jsx_runtime_1.jsx)("p", { className: "message " + message.role + " inline-block mt-8 p-4", children: message.content }) }));
-        }
-    }
-    else if (message.cardType === "person") {
-        return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(personcard_1.default, Object.assign({}, message.personCard)) }) }));
-    }
-    else if (message.cardType === "graph") {
-        return ((0, jsx_runtime_1.jsx)("div", { children: (0, jsx_runtime_1.jsx)(monitorgraph_1.default, Object.assign({}, message.graph)) }));
-    }
-    else if (message.cardType === "player") {
-        return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golfcard_1.default, Object.assign({}, message.golfPlayerCard)) }) }));
-    }
-    else if (message.cardType === "tournament") {
-        return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golftournament_1.default, Object.assign({}, message.golfTournamentCard)) }) }));
-    }
-}
+const golfplayercard_1 = __importDefault(require("./golfplayercard"));
+const golftournamentcard_1 = __importDefault(require("./golftournamentcard"));
 function App() {
     const [formValue, setFormValue] = (0, react_1.useState)('');
     const [messages, setMessages] = (0, react_1.useState)([]);
+    function renderContent(message) {
+        if (message.cardType === "string") {
+            if (message.role === 'user') {
+                return ((0, jsx_runtime_1.jsx)("div", { className: "flex flex-row-reverse", children: (0, jsx_runtime_1.jsx)("p", { className: "message " + message.role + " inline-block mt-8 p-2 mr-4", children: message.content }) }));
+            }
+            else {
+                return ((0, jsx_runtime_1.jsx)("div", { className: "flex", children: (0, jsx_runtime_1.jsx)("p", { className: "message " + message.role + " inline-block mt-8 p-4", children: message.content }) }));
+            }
+        }
+        else if (message.cardType === "person") {
+            return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(personcard_1.default, Object.assign({}, message.personCard)) }) }));
+        }
+        else if (message.cardType === "graph") {
+            return ((0, jsx_runtime_1.jsx)("div", { children: (0, jsx_runtime_1.jsx)(monitorgraph_1.default, Object.assign({}, message.graph)) }));
+        }
+        else if (message.cardType === "player") {
+            return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golfplayercard_1.default, Object.assign({}, message.golfPlayerCard, { messages: messages, setMessages: setMessages })) }) }));
+        }
+        else if (message.cardType === "tournament") {
+            return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golftournamentcard_1.default, Object.assign({}, message.golfTournamentCard, { messages: messages, setMessages: setMessages })) }) }));
+        }
+    }
     const newMessage = (s) => __awaiter(this, void 0, void 0, function* () {
         s.preventDefault();
         setFormValue('');
@@ -53,7 +53,7 @@ function App() {
                 cardType: "string"
             }] : messages;
         setMessages(appendMsgs);
-        const response = yield fetch("http://localhost:5500/api/openai", {
+        const response = yield fetch(`http://localhost:5500/api/openai`, {
             method: 'POST',
             mode: 'cors',
             headers: {

@@ -1,7 +1,17 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsx_runtime_1 = require("react/jsx-runtime");
-const GolfPlayerCard = ({ name, height, birthday, age, rank, tour, alma_mater, hometown, recent_win, profilePictureUrl, sponsor, clubs, ball }) => {
+const react_1 = require("react");
+const GolfPlayerCard = ({ name, height, birthday, age, rank, tour, alma_mater, hometown, recent_win, profilePictureUrl, sponsor, clubs, ball, messages, setMessages }) => {
     const getTourLogo = (tour) => {
         switch (tour) {
             case "LIV": return "https://i0.wp.com/golfblogger.com/wp-content/uploads/2022/05/liv-golf-logo.png?ssl=1";
@@ -27,8 +37,23 @@ const GolfPlayerCard = ({ name, height, birthday, age, rank, tour, alma_mater, h
     };
     const tourLogo = getTourLogo(tour);
     const sponsorLogo = getSponsorLogo(sponsor);
-    console.log(sponsorLogo);
-    return ((0, jsx_runtime_1.jsxs)("div", { className: "max-w-md mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200", children: [profilePictureUrl && ((0, jsx_runtime_1.jsx)("div", { className: "w-full h-64 bg-gray-100 overflow-hidden", children: (0, jsx_runtime_1.jsx)("img", { src: profilePictureUrl, alt: `${name} profile`, className: "w-full h-full object-cover" }) })), (0, jsx_runtime_1.jsxs)("div", { className: "bg-gray-100 p-4 flex items-center justify-between", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center", children: [tourLogo && ((0, jsx_runtime_1.jsx)("img", { src: tourLogo, alt: "Tour Logo", className: "h-8 w-8 mr-2 object-contain" })), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-2xl font-semibold", children: name }), (0, jsx_runtime_1.jsxs)("p", { className: "text-sm text-gray-600", children: ["Rank: ", rank] })] })] }), sponsorLogo && ((0, jsx_runtime_1.jsx)("div", { children: (0, jsx_runtime_1.jsx)("img", { src: sponsorLogo, alt: `${sponsor} Logo`, className: "h-8 w-16 object-contain" }) }))] }), (0, jsx_runtime_1.jsxs)("div", { className: "p-4", children: [(0, jsx_runtime_1.jsx)("div", { className: "text-sm text-gray-600 mb-2", children: (0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Born:" }), " ", birthday, " (", age, " years old)"] }) }), (0, jsx_runtime_1.jsxs)("div", { className: "grid grid-cols-2 gap-4 text-sm text-gray-600", children: [(0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Hometown:" }), " ", hometown] }), (0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Height:" }), " ", height] })] }), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Alma Mater:" }), " ", alma_mater] }), recent_win && ((0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Recent Win:" }), " ", recent_win] }))] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "mt-4", children: [(0, jsx_runtime_1.jsx)("p", { className: "text-sm font-semibold", children: "Ball Used:" }), (0, jsx_runtime_1.jsx)("p", { className: "text-sm text-gray-700", children: ball })] }), clubs && clubs.length > 0 && ((0, jsx_runtime_1.jsxs)("div", { className: "mt-4", children: [(0, jsx_runtime_1.jsx)("p", { className: "text-sm font-semibold", children: "Clubs:" }), (0, jsx_runtime_1.jsx)("ul", { className: "list-disc list-inside text-sm text-gray-700", children: clubs.map((club, index) => ((0, jsx_runtime_1.jsx)("li", { children: club }, index))) })] }))] })] }));
+    const fetchRecentWin = (recent_win) => __awaiter(void 0, void 0, void 0, function* () {
+        const port = process.env.PORT;
+        const response = yield fetch("http://localhost:${port}/api/openai", {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ messages: [{ role: 'user', content: recent_win }] })
+        });
+        const responseMsg = JSON.parse(yield response.text());
+        setMessages([...messages, responseMsg]);
+    });
+    const [isHovered, setIsHovered] = (0, react_1.useState)(false);
+    const handleMouseEnter = () => setIsHovered(true);
+    const handleMouseExit = () => setIsHovered(false);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "max-w-md mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200", children: [profilePictureUrl && ((0, jsx_runtime_1.jsx)("div", { className: "w-full h-64 bg-gray-100 overflow-hidden", children: (0, jsx_runtime_1.jsx)("img", { src: profilePictureUrl, alt: `${name} profile`, className: "w-full h-full object-cover" }) })), (0, jsx_runtime_1.jsxs)("div", { className: "bg-gray-100 p-4 flex items-center justify-between", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center", children: [tourLogo && ((0, jsx_runtime_1.jsx)("img", { src: tourLogo, alt: "Tour Logo", className: "h-8 w-8 mr-2 object-contain" })), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-2xl font-semibold", children: name }), (0, jsx_runtime_1.jsxs)("p", { className: "text-sm text-gray-600", children: ["Rank: ", rank] })] })] }), sponsorLogo && ((0, jsx_runtime_1.jsx)("div", { children: (0, jsx_runtime_1.jsx)("img", { src: sponsorLogo, alt: `${sponsor} Logo`, className: "h-8 w-16 object-contain" }) }))] }), (0, jsx_runtime_1.jsxs)("div", { className: "p-4", children: [(0, jsx_runtime_1.jsx)("div", { className: "text-sm text-gray-600 mb-2", children: (0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Born:" }), " ", birthday, " (", age, " years old)"] }) }), (0, jsx_runtime_1.jsxs)("div", { className: "grid grid-cols-2 gap-4 text-sm text-gray-600", children: [(0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Hometown:" }), " ", hometown] }), (0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Height:" }), " ", height] })] }), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsxs)("p", { children: [(0, jsx_runtime_1.jsx)("strong", { children: "Alma Mater:" }), " ", alma_mater] }), recent_win && ((0, jsx_runtime_1.jsxs)("p", { onClick: () => fetchRecentWin(recent_win), onMouseEnter: handleMouseEnter, onMouseLeave: handleMouseExit, style: { cursor: 'pointer', textDecoration: isHovered ? 'underline' : 'none' }, children: [(0, jsx_runtime_1.jsx)("strong", { children: "Recent Win:" }), " ", recent_win] }))] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "mt-4", children: [(0, jsx_runtime_1.jsx)("p", { className: "text-sm font-semibold", children: "Ball Used:" }), (0, jsx_runtime_1.jsx)("p", { className: "text-sm text-gray-700", children: ball })] }), clubs && clubs.length > 0 && ((0, jsx_runtime_1.jsxs)("div", { className: "mt-4", children: [(0, jsx_runtime_1.jsx)("p", { className: "text-sm font-semibold", children: "Clubs:" }), (0, jsx_runtime_1.jsx)("ul", { className: "list-disc list-inside text-sm text-gray-700", children: clubs.map((club, index) => ((0, jsx_runtime_1.jsx)("li", { children: club }, index))) })] }))] })] }));
 };
 exports.default = GolfPlayerCard;
 //# sourceMappingURL=golfcard.js.map

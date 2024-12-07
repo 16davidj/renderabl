@@ -7,7 +7,7 @@ import dotenv from 'dotenv'
 import { getTrafficData } from './fakedb';
 
 const app = express();
-const port = process.env.PORT || 5500;
+const port = process.env.REACT_APP_PORT || 5500;
 dotenv.config();
 
 app.use(express.json())
@@ -82,11 +82,12 @@ const tools: OpenAI.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "golfPlayerAgent",
-      description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player.",
+      description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player, and maybe from a specific year.",
       parameters: {
         type: "object",
         properties: {
           player: { type: "string", description: "The name of the golf player to get information on." },
+          year: {type: "number", description: "The year to get information about the golf player. If not specified, get the current year information."}
         },
         required: ["player"],
       },
@@ -101,8 +102,9 @@ const tools: OpenAI.ChatCompletionTool[] = [
         type: "object",
         properties: {
           tournament: { type: "string", description: "The name of the golf tournament to get information on." },
+          year: {type: "number", description: "The year to get information about the golf tournament."}
         },
-        required: ["tournament"],
+        required: ["tournament", "year"],
       },
     }
   }
@@ -153,8 +155,10 @@ async function getPictureUrl(topic : string, ratio: number, size?: "medium" | "l
       throw new Error(`Google API error: ${response.statusText}`);
     }
     const data = await response.json();
+    console.log(topic)
     for (const item of data.items) {
       if (item.link && item.image.width > 0 && item.image.height > 0) {
+        console.log(item.link)
         const aspectRatio = item.image.width / item.image.height;
         if (aspectRatio >= ratio) {
           return item.link
@@ -168,23 +172,30 @@ async function getPictureUrl(topic : string, ratio: number, size?: "medium" | "l
 }
 
 // Use Structured Outputs and fake API calls to simulate golf player agent.
-async function golfPlayerAgent(player : string): Promise<Message> {
+export async function golfPlayerAgent(player : string, year? : number): Promise<Message> {
   let res:Response
   try {
-    const prompt : Message = { role: "user", content: player }
-    const response = await openai.chat.completions.create({
+    if (!year) {
+      year = new Date().getFullYear();
+    }
+    const playerInYear = player + " in " + year;
+    const prompt : Message = { role: "user", content: playerInYear };
+    const responsePromise = openai.chat.completions.create({
         model: "gpt-4o",
         messages: [{
             role: "system",
-            content: "You are a helpful assistant that gathers information about a golf player."
+            content: "You are a helpful assistant that gathers information about a golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year."
         }, prompt],
         response_format: zodResponseFormat(GolfPlayerCardStructure, "golf_player_card_structure"),
       })
+      const pictureUrlPromise = getPictureUrl(playerInYear, 0.7);
+      const [response, profilePictureUrl] = await Promise.all([responsePromise, pictureUrlPromise]);
+
       const result = response.choices[0].message.content;
       const parsedOutput : GolfPlayerCardProps = JSON.parse(result);
-      if (parsedOutput.name) {
-        // Get picture from Google custom search
-        parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
+      parsedOutput.profilePictureUrl = profilePictureUrl;
+      if (year != new Date().getFullYear()) {
+        parsedOutput.year = year;
       }
       const messageResponse : Message = {
         role: "system",
@@ -199,24 +210,24 @@ async function golfPlayerAgent(player : string): Promise<Message> {
 }
 
 // Use Structured Outputs and fake API calls to simulate golf player agent.
-async function golfTournamentAgent(tournament : string): Promise<Message> {
+export async function golfTournamentAgent(tournament : string, year : number): Promise<Message> {
   let res:Response
   try {
-    const prompt : Message = { role: "user", content: tournament + " golf tournament" }
-    const response = await openai.chat.completions.create({
+    const prompt : Message = { role: "user", content: tournament + " golf tournament " + "in " + year };
+    const responsePromise = openai.chat.completions.create({
         model: "gpt-4o",
         messages: [{
             role: "system",
-            content: "You are a helpful assistant that gathers information about a golf tournament from a certain year. If the prompt does not include the year, find the tournament results from the most recent year."
+            content: "You are a helpful assistant that gathers information about a golf tournament from a certain year."
         }, prompt],
         response_format: zodResponseFormat(GolfTournamentCardStructure, "golf_tournament_card_structure"),
       })
+    const coursePicturePromise = getPictureUrl(tournament + " " + year + " golf tournament", 0.9);
+    const [response, coursePictureUrl] = await Promise.all([responsePromise, coursePicturePromise]);
+
     const result = response.choices[0].message.content;
     const parsedOutput : GolfTournamentCardProps = JSON.parse(result);
-    if (parsedOutput.name) {
-      // Get picture from Google custom search
-      parsedOutput.course_picture_url = await getPictureUrl(parsedOutput.name, 1.3, "large");
-    }
+    parsedOutput.course_picture_url = coursePictureUrl;
     // TODO: make call to YouTube to get highlights to video
     const messageResponse : Message = {
       role: "system",
@@ -276,9 +287,12 @@ async function agentDeciderAndRunner(responseString : string) : Promise<Message>
     case "monitoringGraphAgent":
       return monitoringGraphAgent(args.handlerName);
     case "golfPlayerAgent":
+      if (args.year) {
+        return golfPlayerAgent(args.player, args.year);
+      }
       return golfPlayerAgent(args.player);
     case "golfTournamentAgent":
-      return golfTournamentAgent(args.tournament);
+      return golfTournamentAgent(args.tournament, args.year);
   } 
 }
 
@@ -291,10 +305,10 @@ async function postCall(req:Request, res:Response) {
       return res.status(400).json({error: "Prompt is required"});
     }
     const functionCallResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [{
         role: "system",
-        content: "You are an agent that determines what function in the tools to call given the user prompt. "
+        content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
     }, ...prompt],
       tools: tools,
     });

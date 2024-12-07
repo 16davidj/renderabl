@@ -12,6 +12,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.golfPlayerAgent = golfPlayerAgent;
+exports.golfTournamentAgent = golfTournamentAgent;
 const express_1 = __importDefault(require("express"));
 const openai_1 = require("openai");
 const types_1 = require("./types");
@@ -20,7 +22,7 @@ const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const fakedb_1 = require("./fakedb");
 const app = (0, express_1.default)();
-const port = process.env.PORT || 5500;
+const port = process.env.REACT_APP_PORT || 5500;
 dotenv_1.default.config();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: '*' }));
@@ -91,11 +93,12 @@ const tools = [
         type: "function",
         function: {
             name: "golfPlayerAgent",
-            description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player.",
+            description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player, and maybe from a specific year.",
             parameters: {
                 type: "object",
                 properties: {
                     player: { type: "string", description: "The name of the golf player to get information on." },
+                    year: { type: "number", description: "The year to get information about the golf player. If not specified, get the current year information." }
                 },
                 required: ["player"],
             },
@@ -110,8 +113,9 @@ const tools = [
                 type: "object",
                 properties: {
                     tournament: { type: "string", description: "The name of the golf tournament to get information on." },
+                    year: { type: "number", description: "The year to get information about the golf tournament." }
                 },
-                required: ["tournament"],
+                required: ["tournament", "year"],
             },
         }
     }
@@ -163,12 +167,12 @@ function getPictureUrl(topic, ratio, size) {
                 throw new Error(`Google API error: ${response.statusText}`);
             }
             const data = yield response.json();
+            console.log(topic);
             for (const item of data.items) {
                 if (item.link && item.image.width > 0 && item.image.height > 0) {
+                    console.log(item.link);
                     const aspectRatio = item.image.width / item.image.height;
-                    console.log(aspectRatio);
                     if (aspectRatio >= ratio) {
-                        console.log(item.link);
                         return item.link;
                     }
                 }
@@ -181,24 +185,30 @@ function getPictureUrl(topic, ratio, size) {
     });
 }
 // Use Structured Outputs and fake API calls to simulate golf player agent.
-function golfPlayerAgent(player) {
+function golfPlayerAgent(player, year) {
     return __awaiter(this, void 0, void 0, function* () {
         let res;
         try {
-            const prompt = { role: "user", content: player };
-            const response = yield openai.chat.completions.create({
+            if (!year) {
+                year = new Date().getFullYear();
+            }
+            const playerInYear = player + " in " + year;
+            const prompt = { role: "user", content: playerInYear };
+            const responsePromise = openai.chat.completions.create({
                 model: "gpt-4o",
                 messages: [{
                         role: "system",
-                        content: "You are a helpful assistant that gathers information about a golf player."
+                        content: "You are a helpful assistant that gathers information about a golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year."
                     }, prompt],
                 response_format: (0, zod_1.zodResponseFormat)(types_1.GolfPlayerCardStructure, "golf_player_card_structure"),
             });
+            const pictureUrlPromise = getPictureUrl(playerInYear, 0.7);
+            const [response, profilePictureUrl] = yield Promise.all([responsePromise, pictureUrlPromise]);
             const result = response.choices[0].message.content;
             const parsedOutput = JSON.parse(result);
-            if (parsedOutput.name) {
-                // Get picture from Google custom search
-                parsedOutput.profilePictureUrl = yield getPictureUrl(parsedOutput.name, 1.0);
+            parsedOutput.profilePictureUrl = profilePictureUrl;
+            if (year != new Date().getFullYear()) {
+                parsedOutput.year = year;
             }
             const messageResponse = {
                 role: "system",
@@ -214,25 +224,24 @@ function golfPlayerAgent(player) {
     });
 }
 // Use Structured Outputs and fake API calls to simulate golf player agent.
-function golfTournamentAgent(tournament) {
+function golfTournamentAgent(tournament, year) {
     return __awaiter(this, void 0, void 0, function* () {
         let res;
         try {
-            const prompt = { role: "user", content: tournament + " golf tournament" };
-            const response = yield openai.chat.completions.create({
+            const prompt = { role: "user", content: tournament + " golf tournament " + "in " + year };
+            const responsePromise = openai.chat.completions.create({
                 model: "gpt-4o",
                 messages: [{
                         role: "system",
-                        content: "You are a helpful assistant that gathers information about a golf tournament from a certain year. If the prompt does not include the year, find the tournament results from the most recent year."
+                        content: "You are a helpful assistant that gathers information about a golf tournament from a certain year."
                     }, prompt],
                 response_format: (0, zod_1.zodResponseFormat)(types_1.GolfTournamentCardStructure, "golf_tournament_card_structure"),
             });
+            const coursePicturePromise = getPictureUrl(tournament + " " + year + " golf tournament", 0.9);
+            const [response, coursePictureUrl] = yield Promise.all([responsePromise, coursePicturePromise]);
             const result = response.choices[0].message.content;
             const parsedOutput = JSON.parse(result);
-            if (parsedOutput.name) {
-                // Get picture from Google custom search
-                parsedOutput.course_picture_url = yield getPictureUrl(parsedOutput.name, 1.3, "large");
-            }
+            parsedOutput.course_picture_url = coursePictureUrl;
             // TODO: make call to YouTube to get highlights to video
             const messageResponse = {
                 role: "system",
@@ -294,9 +303,12 @@ function agentDeciderAndRunner(responseString) {
             case "monitoringGraphAgent":
                 return monitoringGraphAgent(args.handlerName);
             case "golfPlayerAgent":
+                if (args.year) {
+                    return golfPlayerAgent(args.player, args.year);
+                }
                 return golfPlayerAgent(args.player);
             case "golfTournamentAgent":
-                return golfTournamentAgent(args.tournament);
+                return golfTournamentAgent(args.tournament, args.year);
         }
     });
 }
@@ -310,10 +322,10 @@ function postCall(req, res) {
             return res.status(400).json({ error: "Prompt is required" });
         }
         const functionCallResponse = yield openai.chat.completions.create({
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [{
                     role: "system",
-                    content: "You are an agent that determines what function in the tools to call given the user prompt. "
+                    content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
                 }, ...prompt],
             tools: tools,
         });
