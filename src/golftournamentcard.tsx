@@ -11,7 +11,7 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   purse,
   players,
   course_picture_url,
-  yt_highlights,
+  yt_highlights_id,
   year,
   messages,
   setMessages
@@ -50,7 +50,6 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
         <p className="text-sm text-gray-600">{course}</p>
       </div>
 
-      {/* Location and Dates */}
       <div className="p-4">
         <p className="text-sm text-gray-600">
           <strong>Location:</strong> {location}
@@ -68,6 +67,21 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
           <strong>Summary:</strong> {summary.toLocaleString()}
         </p>
       </div>
+
+      {/* YouTube Video Player */}
+      {yt_highlights_id && (
+       <div className="p-4">
+       <p className="text-lg font-semibold mb-2">Highlights</p>
+       <div className="relative w-full aspect-w-16 aspect-h-9"> {/* Flexible aspect ratio container */}
+         <iframe
+           src={`https://www.youtube.com/embed/${yt_highlights_id}`}
+           title="YouTube video player"
+           className="w-full h-full"
+           allowFullScreen
+         ></iframe>
+       </div>
+     </div>
+      )}
 
       {/* Leaderboard */}
       {players && players.length > 0 && (

@@ -145,9 +145,9 @@ async function getPictureUrl(topic : string, ratio: number, size?: "medium" | "l
   try {
     const CX = '70fc0f5d68c984853';
     const FILE_TYPE = 'jpg';
-    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}`;
+    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}`;
     if (size) {
-      const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_IMAGE_SEARCH_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}&imgSize=${size}`;
+      const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}&imgSize=${size}`;
     }
     // Use fetch to call the Google API
     const response = await fetch(googleApiUrl);
@@ -163,6 +163,25 @@ async function getPictureUrl(topic : string, ratio: number, size?: "medium" | "l
         if (aspectRatio >= ratio) {
           return item.link
         }
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching data from Google API:', error);
+    return "";
+  }
+}
+
+async function getYouTubeVodId(query : string) : Promise<string> {
+  try {
+    const youtubeApiUrl = `https://www.googleapis.com/youtube/v3/search?key=${process.env.GOOGLE_API_KEY}&part=snippet&q=${query}&maxResults=5`;
+    const response = await fetch(youtubeApiUrl);
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.statusText}`);
+    }
+    const data = await response.json();
+    for (const item of data.items) {
+      if (item.id && item.id.videoId) {
+        return item.id.videoId;
       }
     }
   } catch (error) {
@@ -188,7 +207,7 @@ export async function golfPlayerAgent(player : string, year? : number): Promise<
         }, prompt],
         response_format: zodResponseFormat(GolfPlayerCardStructure, "golf_player_card_structure"),
       })
-      const pictureUrlPromise = getPictureUrl(playerInYear, 0.7);
+      const pictureUrlPromise = getPictureUrl(playerInYear, 1.0);
       const [response, profilePictureUrl] = await Promise.all([responsePromise, pictureUrlPromise]);
 
       const result = response.choices[0].message.content;
@@ -223,11 +242,14 @@ export async function golfTournamentAgent(tournament : string, year : number): P
         response_format: zodResponseFormat(GolfTournamentCardStructure, "golf_tournament_card_structure"),
       })
     const coursePicturePromise = getPictureUrl(tournament + " " + year + " golf tournament", 0.9);
-    const [response, coursePictureUrl] = await Promise.all([responsePromise, coursePicturePromise]);
+    const videoPromise = getYouTubeVodId(tournament + " " + year + " golf tournament highlights");
+    const [response, coursePictureUrl, yt_highlights_id] = await Promise.all([responsePromise, coursePicturePromise, videoPromise]);
 
     const result = response.choices[0].message.content;
     const parsedOutput : GolfTournamentCardProps = JSON.parse(result);
     parsedOutput.course_picture_url = coursePictureUrl;
+    console.log(yt_highlights_id)
+    parsedOutput.yt_highlights_id = yt_highlights_id;
     // TODO: make call to YouTube to get highlights to video
     const messageResponse : Message = {
       role: "system",

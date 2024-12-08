@@ -2,8 +2,12 @@
 module.exports = {
   content: ["./src/**/*.{js,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      aspectRatio: {
+        '16/9': '16 / 9',
+      },
+    },
   },
-  plugins: [],
+  plugins: [require('@tailwindcss/aspect-ratio')],
 }
 

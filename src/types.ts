@@ -82,7 +82,7 @@ export type GolfTournamentCardProps = {
   purse: number;
   players: PlayerScoreType[];
   course_picture_url?: string;
-  yt_highlights?: string;
+  yt_highlights_id?: string;
   year: number;
   messages: Message[],
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
