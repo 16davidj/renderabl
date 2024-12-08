@@ -7,7 +7,7 @@ export type PersonCardProps = {
   death?: string;
   age: number;
   occupation: string;
-  alma_mater: string;
+  almaMater: string;
   hometown: string;
   spouses?: string[];
   awards?: string[];
@@ -21,7 +21,7 @@ export const PersonCardStructure = z.object({
     death: z.string(),
     age: z.number(),
     occupation: z.string().describe("occupation the person is best known for in 5 words or less"),
-    alma_mater: z.string(),
+    almaMater: z.string(),
     hometown: z.string(),
     spouses: z.array(z.string()),
     awards: z.array(z.string()),
@@ -35,10 +35,10 @@ export type GolfPlayerCardProps = {
   birthday: string;
   rank: number;
   tour: "LIV" | "PGA" | "DP" | "Korn Ferry" | "Asia" | "LPGA" | "Champions";
-  alma_mater: string;
+  almaMater: string;
   hometown: string;
-  first_win?: string;
-  recent_win?: string;
+  firstWin?: string;
+  recentWin?: string;
   profilePictureUrl?: string;
   sponsor?: string;
   clubs: string[];
@@ -53,10 +53,10 @@ export const GolfPlayerCardStructure = z.object({
   birthday: z.string(),
   rank: z.number().describe("Rank the player is in the world according to the Official World Golf Ranking System in the specified year."),
   tour: z.enum(["LIV", "PGA", "LPGA", "DP", "Korn Ferry", "Asia", "Champions"]).describe("The logo of the tour the player played in the specified year. One of LIV Golf, PGA Tour, DP World Tour, Korn Ferry Tour, Asia Tour, LPGA tour, PGA Tour Champions, etc. If the player moved from PGA to LIV, please default to LIV. See the LIV golf roster from livgolf.com/player, for the current PGA Tour roster, see pgatour.com/players, for Korn Ferry, see pgatour.com/korn-ferry-tour/players"),
-  alma_mater: z.string(),
+  almaMater: z.string(),
   hometown: z.string(),
-  first_win: z.string().describe("the first LIV, DP World Tour, or PGA Tour tournament win the player won. Please include the year of the tournament as well."),
-  recent_win: z.string().describe("the most recent LIV, DP World Tour, or PGA Tour tournament win the player won up to the specified year. Please include the year of the tournament as well.").optional(),
+  firstWin: z.string().describe("the first LIV, DP World Tour, or PGA Tour tournament win the player won. Please include the year of the tournament as well."),
+  recentWin: z.string().describe("the most recent LIV, DP World Tour, or PGA Tour tournament win the player won up to the specified year. Please include the year of the tournament as well.").optional(),
   sponsor: z.enum(["TaylorMade", "Titleist", "Callaway", "Ping", "Mizuno", "Srixon", "Wilson", "PXG", "Nike", "Adams"]).optional().describe("Information can be from pgaclubtracker.com, GolfWRX, or other websites. Sponsor should be the sponsor from that year."),
   clubs: z.array(z.string()).describe("List of clubs the player used that year. Please do not include information about the shaft or grip. Just the club head. Clubs should be the clubs the player used in the specified year."),
   ball: z.string().describe("The ball the player used that year, for example, Titleist Pro V1, Taylormade TP5x, etc.").optional(),
@@ -64,9 +64,9 @@ export const GolfPlayerCardStructure = z.object({
 
 const PlayerScore = z.object({
   name: z.string(),
-  round_scores: z.array(z.string()).describe("The scores for each round, 3 rounds for LIV or 4 rounds for other tournaments. Please also show the scores relative to par. For example, 68 (-4), when the par is 72. "),
-  final_score: z.string().describe("The final score for the tournament. For example, 68 (-4), when the par is 72. This should be the cumulative total of round scores."),
-  prize_money: z.number().describe("The prize money the player won for their position in the standings."),
+  roundScores: z.array(z.string()).describe("The scores for each round, 3 rounds for LIV or 4 rounds for other tournaments. Please also show the scores relative to par. For example, 68 (-4), when the par is 72. "),
+  finalScore: z.string().describe("The final score for the tournament. For example, 68 (-4), when the par is 72. This should be the cumulative total of round scores."),
+  prizeMoney: z.number().describe("The prize money the player won for their position in the standings."),
   position: z.string().describe("The position of the player in the tournament. For example, 1 for first, 2 for second, T2 if there was a tie for 2nd.")
 })
 
@@ -81,8 +81,8 @@ export type GolfTournamentCardProps = {
   weather: string;
   purse: number;
   players: PlayerScoreType[];
-  course_picture_url?: string;
-  yt_highlights_id?: string;
+  coursePictureUrl?: string;
+  ytHighlightsId?: string;
   year: number;
   messages: Message[],
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;

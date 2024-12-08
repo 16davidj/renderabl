@@ -1,5 +1,5 @@
 import React from "react";
-import { PersonCardProps } from "./types";
+import { PersonCardProps } from "../types";
 
 const PersonCard: React.FC<PersonCardProps> = ({
   name,
@@ -8,7 +8,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
   death,
   age,
   occupation,
-  alma_mater,
+  almaMater,
   hometown,
   spouses,
   awards,
@@ -46,7 +46,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
           </div>
           <div>
             <p><strong>Hometown:</strong> {hometown}</p>
-            <p><strong>Alma Mater:</strong> {alma_mater}</p>
+            <p><strong>Alma Mater:</strong> {almaMater}</p>
           </div>
         </div>
 

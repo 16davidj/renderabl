@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import { GolfTournamentCardProps, Message} from "./types";
+import { GolfTournamentCardProps, Message} from "../types";
 
 const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   name,
@@ -10,8 +10,8 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   weather,
   purse,
   players,
-  course_picture_url,
-  yt_highlights_id,
+  coursePictureUrl,
+  ytHighlightsId,
   year,
   messages,
   setMessages
@@ -35,10 +35,10 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   return (
     <div className="inline-block w-3/4 max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
       {/* Course Picture */}
-      {course_picture_url && (
+      {coursePictureUrl && (
         <div className="w-full h-68 bg-gray-100 overflow-hidden">
           <img
-            src={course_picture_url}
+            src={coursePictureUrl}
             alt={`${course} Course`}
             className="w-full h-full object-cover"
           />
@@ -69,12 +69,12 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
       </div>
 
       {/* YouTube Video Player */}
-      {yt_highlights_id && (
+      {ytHighlightsId && (
        <div className="p-4">
        <p className="text-lg font-semibold mb-2">Highlights</p>
        <div className="relative w-full aspect-w-16 aspect-h-9"> {/* Flexible aspect ratio container */}
          <iframe
-           src={`https://www.youtube.com/embed/${yt_highlights_id}`}
+           src={`https://www.youtube.com/embed/${ytHighlightsId}`}
            title="YouTube video player"
            className="w-full h-full"
            allowFullScreen
@@ -113,20 +113,20 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
                         onMouseLeave = {handleMouseLeave}
                         style = {{cursor: 'pointer', textDecoration: hoveredIndex === index ? 'underline' : 'none',}} className="px-4 py-2 text-left">{player.name}</td>
                     <td className="px-4 py-2 text-center">
-                      {player.round_scores[0]}
+                      {player.roundScores[0]}
                     </td>
                     <td className="px-4 py-2 text-center">
-                      {player.round_scores[1]}
+                      {player.roundScores[1]}
                     </td>
                     <td className="px-4 py-2 text-center">
-                      {player.round_scores[2]}
+                      {player.roundScores[2]}
                     </td>
                     <td className="px-4 py-2 text-center">
-                      {player.round_scores[3] }
+                      {player.roundScores[3] }
                     </td>
-                    <td className="px-4 py-2 text-center">{player.final_score}</td>
+                    <td className="px-4 py-2 text-center">{player.finalScore}</td>
                     <td className="px-4 py-2 text-right">
-                      ${player.prize_money.toLocaleString()}
+                      ${player.prizeMoney.toLocaleString()}
                     </td>
                   </tr>
                 );

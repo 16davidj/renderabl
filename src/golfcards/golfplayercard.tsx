@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 
-import { GolfPlayerCardProps, Message } from "./types";
+import { GolfPlayerCardProps, Message } from "../types";
 
 const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
   name,
@@ -9,10 +9,10 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
   birthday,
   rank,
   tour,
-  alma_mater,
+  almaMater,
   hometown,
-  recent_win,
-  first_win,
+  recentWin,
+  firstWin,
   profilePictureUrl,
   sponsor,
   clubs,
@@ -122,21 +122,21 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
             <p><strong>Height:</strong> {height}</p>
           </div>
           <div>
-            <p><strong>Alma Mater:</strong> {alma_mater}</p>
-            {first_win && (
-              <p onClick={() => fetchWin(first_win)}
+            <p><strong>Alma Mater:</strong> {almaMater}</p>
+            {firstWin && (
+              <p onClick={() => fetchWin(firstWin)}
               onMouseEnter = {() => setFirstWinIsHovered(true)}
               onMouseLeave = {() => setFirstWinIsHovered(false)}
             style = {{cursor: 'pointer', textDecoration: isFirstWinHovered ? 'underline' : 'none'}}>
-                <strong>First Win:</strong> {first_win}
+                <strong>First Win:</strong> {firstWin}
               </p>
             )}
-            {recent_win && (
-              <p onClick={() => fetchWin(recent_win)}
+            {recentWin && (
+              <p onClick={() => fetchWin(recentWin)}
               onMouseEnter = {() => setRecentWinIsHovered(true)}
               onMouseLeave = {() => setRecentWinIsHovered(false)}
             style = {{cursor: 'pointer', textDecoration: isRecentWinHovered ? 'underline' : 'none'}}>
-                <strong>Recent Win:</strong> {recent_win}
+                <strong>Recent Win:</strong> {recentWin}
               </p>
             )}
           </div>

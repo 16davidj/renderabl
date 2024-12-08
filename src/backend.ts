@@ -243,14 +243,13 @@ export async function golfTournamentAgent(tournament : string, year : number): P
       })
     const coursePicturePromise = getPictureUrl(tournament + " " + year + " golf tournament", 0.9);
     const videoPromise = getYouTubeVodId(tournament + " " + year + " golf tournament highlights");
-    const [response, coursePictureUrl, yt_highlights_id] = await Promise.all([responsePromise, coursePicturePromise, videoPromise]);
+    const [response, coursePictureUrl, ytHighlightsId] = await Promise.all([responsePromise, coursePicturePromise, videoPromise]);
 
     const result = response.choices[0].message.content;
     const parsedOutput : GolfTournamentCardProps = JSON.parse(result);
-    parsedOutput.course_picture_url = coursePictureUrl;
-    console.log(yt_highlights_id)
-    parsedOutput.yt_highlights_id = yt_highlights_id;
-    // TODO: make call to YouTube to get highlights to video
+    parsedOutput.coursePictureUrl = coursePictureUrl;
+    console.log(ytHighlightsId)
+    parsedOutput.ytHighlightsId = ytHighlightsId;
     const messageResponse : Message = {
       role: "system",
       content: "chat response with a UI card about the golf tournament.",
