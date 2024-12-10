@@ -51,7 +51,7 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
   const sponsorLogo = getSponsorLogo(sponsor);
   
   const fetchWin = async (win: string) => {
-    const response = await fetch(`http://localhost:5500/api/openai`, {
+    const response = await fetch(`http://localhost:5500/api/renderabl`, {
         method:'POST',
         mode: 'cors',
         headers: {

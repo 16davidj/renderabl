@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/main.tsx',
+  entry: './src/sampleApp/main.tsx',
   devtool: 'inline-source-map',
   module: {
     rules: [
@@ -10,7 +10,6 @@ module.exports = {
         use: 'ts-loader',
         exclude: /node_modules/,
       },
-
       { test: /\.css$/, use: [ 'style-loader', 'css-loader' ] },
     ],
   },

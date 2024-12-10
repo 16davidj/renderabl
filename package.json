@@ -23,6 +23,6 @@
           "webpack-cli": "^5.1.4"
      },
      "scripts": {
-          "start:server": "node ./dist/backend.js"
+          "start:server": "node ./dist/renderableBe/backend.js"
      }
 }

@@ -13,7 +13,7 @@ const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = require("react");
 const GolfTournamentCard = ({ name, location, course, summary, dates, weather, purse, players, coursePictureUrl, ytHighlightsId, year, messages, setMessages }) => {
     const fetchGolfPlayer = (name, year) => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield fetch(`http://localhost:5500/api/openai`, {
+        const response = yield fetch(`http://localhost:5500/api/renderabl`, {
             method: 'POST',
             mode: 'cors',
             headers: {

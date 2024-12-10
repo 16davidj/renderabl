@@ -16,11 +16,12 @@ exports.golfPlayerAgent = golfPlayerAgent;
 exports.golfTournamentAgent = golfTournamentAgent;
 const express_1 = __importDefault(require("express"));
 const openai_1 = require("openai");
-const types_1 = require("./types");
+const types_1 = require("../types");
 const zod_1 = require("openai/helpers/zod");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const fakedb_1 = require("./fakedb");
+const renderableFeUtils_1 = require("../renderableFe/renderableFeUtils");
 const app = (0, express_1.default)();
 const port = process.env.REACT_APP_PORT || 5500;
 dotenv_1.default.config();
@@ -33,7 +34,8 @@ app.use((req, res, next) => {
     next();
 });
 const router = express_1.default.Router();
-router.post('/api/openai', postCall);
+router.post('/api/renderabl', postCall);
+router.post('/api/generateRenderabl', generateComponent);
 app.use(router);
 const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const tools = [
@@ -354,6 +356,19 @@ function postCall(req, res) {
         });
         const messageResponse = yield agentDeciderAndRunner(JSON.stringify(functionCallResponse));
         return res.status(200).json(messageResponse);
+    });
+}
+function generateComponent(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const prompt = req.body;
+        if (!req.is('application/json')) {
+            return res.status(400).json({ error: 'Invalid request body' });
+        }
+        if (!prompt) {
+            return res.status(400).json({ error: "Prompt is required" });
+        }
+        (0, renderableFeUtils_1.generateComponentFile)(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
+        return res.status(200);
     });
 }
 app.listen(port, () => {

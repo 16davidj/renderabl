@@ -17,7 +17,7 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   setMessages
 }) => {
     const fetchGolfPlayer = async (name: string, year: number) => {
-        const response = await fetch(`http://localhost:5500/api/openai`, {
+        const response = await fetch(`http://localhost:5500/api/renderabl`, {
             method:'POST',
             mode: 'cors',
             headers: {

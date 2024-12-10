@@ -1,10 +1,11 @@
 import express, {Request, Response} from 'express';
 import {OpenAI} from 'openai'
-import {GolfPlayerCardStructure, GolfTournamentCardProps, GolfPlayerCardProps, Message, GolfTournamentCardStructure, PersonCardProps, PersonCardStructure} from './types'
+import {GolfPlayerCardStructure, GolfTournamentCardProps, GolfPlayerCardProps, Message, GolfTournamentCardStructure, PersonCardProps, PersonCardStructure} from '../types'
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { getTrafficData } from './fakedb';
+import { generateComponentFile } from '../renderableFe/renderableFeUtils';
 
 const app = express();
 const port = process.env.REACT_APP_PORT || 5500;
@@ -20,7 +21,8 @@ app.use((req, res, next) => {
   });
 
 const router = express.Router();
-router.post('/api/openai', postCall as (req: Request, res: Response) => void);
+router.post('/api/renderabl', postCall as (req: Request, res: Response) => void);
+router.post('/api/generateRenderabl', generateComponent as (req: Request, res: Response) => void)
 app.use(router)
 
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -335,6 +337,18 @@ async function postCall(req:Request, res:Response) {
     });
     const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse))
     return res.status(200).json(messageResponse);
+}
+
+async function generateComponent(req:Request, res:Response) {
+  const prompt = req.body;
+  if (!req.is('application/json')) {
+      return res.status(400).json({ error: 'Invalid request body' });
+  }
+  if (!prompt) {
+    return res.status(400).json({error: "Prompt is required"});
+  }
+  generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
+  return res.status(200)
 }
 
 app.listen(port, () => {

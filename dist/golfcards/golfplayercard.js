@@ -40,7 +40,7 @@ const GolfPlayerCard = ({ name, year, height, birthday, rank, tour, almaMater, h
     const tourLogo = getTourLogo(tour);
     const sponsorLogo = getSponsorLogo(sponsor);
     const fetchWin = (win) => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield fetch(`http://localhost:5500/api/openai`, {
+        const response = yield fetch(`http://localhost:5500/api/renderabl`, {
             method: 'POST',
             mode: 'cors',
             headers: {
