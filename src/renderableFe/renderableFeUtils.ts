@@ -5,7 +5,6 @@ import { ChatCompletionMessageParam } from 'openai/resources';
 
 dotenv.config();
 
-
 export const concatenateComponentFiles = (fileDirectories : string[], directoryPath : string): string => {
   let concatenatedContent = '';
   fileDirectories.forEach(filePath => {
@@ -24,7 +23,6 @@ export const concatenateComponentFiles = (fileDirectories : string[], directoryP
 
 // agentProps should be a json representation of the struct.
 export const generateComponentFile = async (directoryPath: string, agentName : string, agentProps : string, agentDescription : string, outputPath : string) : Promise<void> => {
-    console.log(__dirname)
     const fileDirectories : string[] = fs.readdirSync(directoryPath);
     const prevComponentContent = concatenateComponentFiles(fileDirectories, directoryPath);
     const prompt : ChatCompletionMessageParam = {role: "user", content: `The agent name is ${agentName}, with the following properties: ${agentProps}. This is the agent description: ${agentDescription}. This is
@@ -40,7 +38,6 @@ export const generateComponentFile = async (directoryPath: string, agentName : s
         }, prompt],
     })
     const content = response.choices[0].message.content;
-    console.log(content)
     fs.writeFile(outputPath, content, (err) => {
         if (err) {
             console.error('Error writing to file:', err);

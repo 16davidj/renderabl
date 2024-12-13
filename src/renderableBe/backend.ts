@@ -8,20 +8,20 @@ import { getTrafficData } from './fakedb';
 import { generateComponentFile } from '../renderableFe/renderableFeUtils';
 
 const app = express();
-const port = process.env.REACT_APP_PORT || 5500;
+const port = process.env.REACT_APP_PORT;
 dotenv.config();
 
 app.use(express.json())
 app.use(cors({origin: '*'}))
 app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*"); // Or specify allowed origins
+    res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type");
     next();
   });
 
 const router = express.Router();
-router.post('/api/renderabl', postCall as (req: Request, res: Response) => void);
+router.post('/api/renderabl', renderableBe as (req: Request, res: Response) => void);
 router.post('/api/generateRenderabl', generateComponent as (req: Request, res: Response) => void)
 app.use(router)
 
@@ -66,20 +66,20 @@ const tools: OpenAI.ChatCompletionTool[] = [
   //     },
   //   }
   // },
-  {
-    type: "function",
-    function: {
-      name: "monitoringGraphAgent",
-      description: "Get monitoring graph data. Call whenever you need to respond to a prompt that asks for monitoring graph data of a handler.",
-      parameters: {
-        type: "object",
-        properties: {
-          handlerName: { type: "string", description: "The name of the handler to get monitoring graph data on." },
-        },
-        required: ["handlerName"],
-      },
-    }
-  },
+  // {
+  //   type: "function",
+  //   function: {
+  //     name: "monitoringGraphAgent",
+  //     description: "Get monitoring graph data. Call whenever you need to respond to a prompt that asks for monitoring graph data of a handler.",
+  //     parameters: {
+  //       type: "object",
+  //       properties: {
+  //         handlerName: { type: "string", description: "The name of the handler to get monitoring graph data on." },
+  //       },
+  //       required: ["handlerName"],
+  //     },
+  //   }
+  // },
   {
     type: "function",
     function: {
@@ -142,25 +142,22 @@ async function personAgent(person : string): Promise<Message> {
       }
 }
 
-async function getPictureUrl(topic : string, ratio: number, size?: "medium" | "large"
-) : Promise<string> {
+// Fetch a picture URL from Google Custom Image Search API
+// @query: the query to search for
+// @ratio: the aspect ratio the picture must satisfy
+async function getPictureUrl(query : string, ratio: number) : Promise<string> {
   try {
     const CX = '70fc0f5d68c984853';
     const FILE_TYPE = 'jpg';
-    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}`;
-    if (size) {
-      const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}&imgSize=${size}`;
-    }
+    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${query}&searchType=image&num=5&fileType=${FILE_TYPE}`;
     // Use fetch to call the Google API
     const response = await fetch(googleApiUrl);
     if (!response.ok) {
       throw new Error(`Google API error: ${response.statusText}`);
     }
     const data = await response.json();
-    console.log(topic)
     for (const item of data.items) {
       if (item.link && item.image.width > 0 && item.image.height > 0) {
-        console.log(item.link)
         const aspectRatio = item.image.width / item.image.height;
         if (aspectRatio >= ratio) {
           return item.link
@@ -173,6 +170,8 @@ async function getPictureUrl(topic : string, ratio: number, size?: "medium" | "l
   }
 }
 
+// Fetch a youtube video id from YouTube V3 Data API
+// @query: query to search for
 async function getYouTubeVodId(query : string) : Promise<string> {
   try {
     const youtubeApiUrl = `https://www.googleapis.com/youtube/v3/search?key=${process.env.GOOGLE_API_KEY}&part=snippet&q=${query}&maxResults=5`;
@@ -187,7 +186,7 @@ async function getYouTubeVodId(query : string) : Promise<string> {
       }
     }
   } catch (error) {
-    console.error('Error fetching data from Google API:', error);
+    console.error('Error fetching data from YouTube V3 Data API:', error);
     return "";
   }
 }
@@ -250,8 +249,9 @@ export async function golfTournamentAgent(tournament : string, year : number): P
     const result = response.choices[0].message.content;
     const parsedOutput : GolfTournamentCardProps = JSON.parse(result);
     parsedOutput.coursePictureUrl = coursePictureUrl;
-    console.log(ytHighlightsId)
     parsedOutput.ytHighlightsId = ytHighlightsId;
+    console.log(coursePictureUrl)
+    console.log(ytHighlightsId)
     const messageResponse : Message = {
       role: "system",
       content: "chat response with a UI card about the golf tournament.",
@@ -287,15 +287,15 @@ async function chatAgent(prompt : Message[]) : Promise<Message> {
 }
 
 
-function monitoringGraphAgent(handlerName : string) : Message {
-  const response : Message = {
-    role: "system",
-    content: "chat response with monitoring graph data to render.",
-    graph: { handlerName: handlerName, inputData: getTrafficData(handlerName)},
-    cardType: "graph"
-  }
-  return response
-}
+// function monitoringGraphAgent(handlerName : string) : Message {
+//   const response : Message = {
+//     role: "system",
+//     content: "chat response with monitoring graph data to render.",
+//     graph: { handlerName: handlerName, inputData: getTrafficData(handlerName)},
+//     cardType: "graph"
+//   }
+//   return response
+// }
 
 async function agentDeciderAndRunner(responseString : string) : Promise<Message> {
   const response = JSON.parse(responseString);
@@ -307,19 +307,16 @@ async function agentDeciderAndRunner(responseString : string) : Promise<Message>
       return chatAgent(args.messages);
     // case "personAgent":
     //   return personAgent(args.person);
-    case "monitoringGraphAgent":
-      return monitoringGraphAgent(args.handlerName);
+    // case "monitoringGraphAgent":
+    //   return monitoringGraphAgent(args.handlerName);
     case "golfPlayerAgent":
-      if (args.year) {
-        return golfPlayerAgent(args.player, args.year);
-      }
-      return golfPlayerAgent(args.player);
+      return args.year ? golfPlayerAgent(args.player, args.year) : golfPlayerAgent(args.player); 
     case "golfTournamentAgent":
       return golfTournamentAgent(args.tournament, args.year);
   } 
 }
 
-async function postCall(req:Request, res:Response) {
+async function renderableBe(req:Request, res:Response) {
     const prompt : Message[] = req.body.messages;
     if (!req.is('application/json')) {
         return res.status(400).json({ error: 'Invalid request body' });

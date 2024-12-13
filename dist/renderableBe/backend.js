@@ -20,21 +20,20 @@ const types_1 = require("../types");
 const zod_1 = require("openai/helpers/zod");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const fakedb_1 = require("./fakedb");
 const renderableFeUtils_1 = require("../renderableFe/renderableFeUtils");
 const app = (0, express_1.default)();
-const port = process.env.REACT_APP_PORT || 5500;
+const port = process.env.REACT_APP_PORT;
 dotenv_1.default.config();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: '*' }));
 app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*"); // Or specify allowed origins
+    res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type");
     next();
 });
 const router = express_1.default.Router();
-router.post('/api/renderabl', postCall);
+router.post('/api/renderabl', renderableBe);
 router.post('/api/generateRenderabl', generateComponent);
 app.use(router);
 const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -77,20 +76,20 @@ const tools = [
     //     },
     //   }
     // },
-    {
-        type: "function",
-        function: {
-            name: "monitoringGraphAgent",
-            description: "Get monitoring graph data. Call whenever you need to respond to a prompt that asks for monitoring graph data of a handler.",
-            parameters: {
-                type: "object",
-                properties: {
-                    handlerName: { type: "string", description: "The name of the handler to get monitoring graph data on." },
-                },
-                required: ["handlerName"],
-            },
-        }
-    },
+    // {
+    //   type: "function",
+    //   function: {
+    //     name: "monitoringGraphAgent",
+    //     description: "Get monitoring graph data. Call whenever you need to respond to a prompt that asks for monitoring graph data of a handler.",
+    //     parameters: {
+    //       type: "object",
+    //       properties: {
+    //         handlerName: { type: "string", description: "The name of the handler to get monitoring graph data on." },
+    //       },
+    //       required: ["handlerName"],
+    //     },
+    //   }
+    // },
     {
         type: "function",
         function: {
@@ -154,25 +153,23 @@ function personAgent(person) {
         }
     });
 }
-function getPictureUrl(topic, ratio, size) {
+// Fetch a picture URL from Google Custom Image Search API
+// @query: the query to search for
+// @ratio: the aspect ratio the picture must satisfy
+function getPictureUrl(query, ratio) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const CX = '70fc0f5d68c984853';
             const FILE_TYPE = 'jpg';
-            const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}`;
-            if (size) {
-                const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${topic}&searchType=image&num=5&fileType=${FILE_TYPE}&imgSize=${size}`;
-            }
+            const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${query}&searchType=image&num=5&fileType=${FILE_TYPE}`;
             // Use fetch to call the Google API
             const response = yield fetch(googleApiUrl);
             if (!response.ok) {
                 throw new Error(`Google API error: ${response.statusText}`);
             }
             const data = yield response.json();
-            console.log(topic);
             for (const item of data.items) {
                 if (item.link && item.image.width > 0 && item.image.height > 0) {
-                    console.log(item.link);
                     const aspectRatio = item.image.width / item.image.height;
                     if (aspectRatio >= ratio) {
                         return item.link;
@@ -186,6 +183,8 @@ function getPictureUrl(topic, ratio, size) {
         }
     });
 }
+// Fetch a youtube video id from YouTube V3 Data API
+// @query: query to search for
 function getYouTubeVodId(query) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -202,7 +201,7 @@ function getYouTubeVodId(query) {
             }
         }
         catch (error) {
-            console.error('Error fetching data from Google API:', error);
+            console.error('Error fetching data from YouTube V3 Data API:', error);
             return "";
         }
     });
@@ -266,8 +265,9 @@ function golfTournamentAgent(tournament, year) {
             const result = response.choices[0].message.content;
             const parsedOutput = JSON.parse(result);
             parsedOutput.coursePictureUrl = coursePictureUrl;
-            console.log(ytHighlightsId);
             parsedOutput.ytHighlightsId = ytHighlightsId;
+            console.log(coursePictureUrl);
+            console.log(ytHighlightsId);
             const messageResponse = {
                 role: "system",
                 content: "chat response with a UI card about the golf tournament.",
@@ -305,15 +305,15 @@ function chatAgent(prompt) {
         }
     });
 }
-function monitoringGraphAgent(handlerName) {
-    const response = {
-        role: "system",
-        content: "chat response with monitoring graph data to render.",
-        graph: { handlerName: handlerName, inputData: (0, fakedb_1.getTrafficData)(handlerName) },
-        cardType: "graph"
-    };
-    return response;
-}
+// function monitoringGraphAgent(handlerName : string) : Message {
+//   const response : Message = {
+//     role: "system",
+//     content: "chat response with monitoring graph data to render.",
+//     graph: { handlerName: handlerName, inputData: getTrafficData(handlerName)},
+//     cardType: "graph"
+//   }
+//   return response
+// }
 function agentDeciderAndRunner(responseString) {
     return __awaiter(this, void 0, void 0, function* () {
         const response = JSON.parse(responseString);
@@ -325,19 +325,16 @@ function agentDeciderAndRunner(responseString) {
                 return chatAgent(args.messages);
             // case "personAgent":
             //   return personAgent(args.person);
-            case "monitoringGraphAgent":
-                return monitoringGraphAgent(args.handlerName);
+            // case "monitoringGraphAgent":
+            //   return monitoringGraphAgent(args.handlerName);
             case "golfPlayerAgent":
-                if (args.year) {
-                    return golfPlayerAgent(args.player, args.year);
-                }
-                return golfPlayerAgent(args.player);
+                return args.year ? golfPlayerAgent(args.player, args.year) : golfPlayerAgent(args.player);
             case "golfTournamentAgent":
                 return golfTournamentAgent(args.tournament, args.year);
         }
     });
 }
-function postCall(req, res) {
+function renderableBe(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const prompt = req.body.messages;
         if (!req.is('application/json')) {

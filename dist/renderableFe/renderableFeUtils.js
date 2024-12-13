@@ -33,7 +33,6 @@ const concatenateComponentFiles = (fileDirectories, directoryPath) => {
 exports.concatenateComponentFiles = concatenateComponentFiles;
 // agentProps should be a json representation of the struct.
 const generateComponentFile = (directoryPath, agentName, agentProps, agentDescription, outputPath) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(__dirname);
     const fileDirectories = fs_1.default.readdirSync(directoryPath);
     const prevComponentContent = (0, exports.concatenateComponentFiles)(fileDirectories, directoryPath);
     const prompt = { role: "user", content: `The agent name is ${agentName}, with the following properties: ${agentProps}. This is the agent description: ${agentDescription}. This is
@@ -49,7 +48,6 @@ const generateComponentFile = (directoryPath, agentName, agentProps, agentDescri
             }, prompt],
     });
     const content = response.choices[0].message.content;
-    console.log(content);
     fs_1.default.writeFile(outputPath, content, (err) => {
         if (err) {
             console.error('Error writing to file:', err);
