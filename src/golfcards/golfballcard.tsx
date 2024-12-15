@@ -1,25 +1,25 @@
 import React from "react";
 
-interface GolfBallCardProps {
+interface GolfBallAgentProps {
   picture_url: string;
   name: string;
   summary: string;
   launch: string;
   spin: string;
   firmness: string;
-  players_who_used: string[];
   material: string;
+  players_who_used: string[];
 }
 
-const GolfBallCard: React.FC<GolfBallCardProps> = ({
+const GolfBallAgent: React.FC<GolfBallAgentProps> = ({
   picture_url,
   name,
   summary,
   launch,
   spin,
   firmness,
-  players_who_used,
-  material
+  material,
+  players_who_used
 }) => {
   return (
     <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
@@ -65,4 +65,4 @@ const GolfBallCard: React.FC<GolfBallCardProps> = ({
   );
 };
 
-export default GolfBallCard;
+export default GolfBallAgent;
