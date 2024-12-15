@@ -1,5 +1,18 @@
 import React from "react";
-import { PersonCardProps } from "../types";
+
+export type PersonCardProps = {
+  name: string;
+  summary: string;
+  birthday: string;
+  death?: string;
+  age: number;
+  occupation: string;
+  almaMater: string;
+  hometown: string;
+  spouses?: string[];
+  awards?: string[];
+  profilePictureUrl?: string;
+};
 
 const PersonCard: React.FC<PersonCardProps> = ({
   name,

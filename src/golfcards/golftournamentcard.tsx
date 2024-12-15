@@ -1,5 +1,21 @@
 import React, {useState} from "react";
-import { GolfTournamentCardProps, Message} from "../types";
+import { PlayerScoreType, Message} from "../types";
+
+export type GolfTournamentCardProps = {
+  name: string;
+  location: string;
+  course: string;
+  summary: string;
+  dates: string;
+  weather: string;
+  purse: number;
+  players: PlayerScoreType[];
+  coursePictureUrl?: string;
+  ytHighlightsId?: string;
+  year: number;
+  messages: Message[],
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+}
 
 const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   name,

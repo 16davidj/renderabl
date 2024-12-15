@@ -2,7 +2,6 @@ import fs from 'fs';
 import dotenv from 'dotenv'
 import {OpenAI} from 'openai'
 import { ChatCompletionMessageParam } from 'openai/resources';
-import { getAgent } from '../renderableBe/fakedb';
 
 dotenv.config();
 
@@ -51,8 +50,7 @@ export const generateComponentFile = async (directoryPath: string, agentName : s
     return;
 }
 
-export const mutateComponentFile = async (agentName : string, userPrompt : string) : Promise<void> => {
-  const fileLocation = getAgent(agentName);
+export const mutateComponentFile = async (fileLocation : string, agentName : string, userPrompt : string) : Promise<void> => {
   const fileStats = fs.statSync(fileLocation);
   if (fileStats.isFile() && fileLocation.endsWith('.tsx')) {
     const fileContent = fs.readFileSync(fileLocation, 'utf-8');

@@ -41,3 +41,6 @@ http://localhost:5500/api/mutateRenderabl, with a raw body of:
     "agentName": "GolfBallAgent",
     "mutation" : "Please add to the UI component so that it can display info about the golf ball's material on the inside (eg. urethane). The field should be a string."
 }
+
+# Start Redis server
+redis-server

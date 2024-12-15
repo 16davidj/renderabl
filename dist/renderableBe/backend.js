@@ -21,7 +21,37 @@ const zod_1 = require("openai/helpers/zod");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const renderableFeUtils_1 = require("../renderableFe/renderableFeUtils");
-const fakedb_1 = require("./fakedb");
+const redisClient_1 = require("../redis/redisClient");
+const redisUtils_1 = require("../redis/redisUtils");
+const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Example: Preload some key-value pairs necessary to render logos.
+        const data = [
+            { key: 'tourlogo:LIV', value: 'https://i0.wp.com/golfblogger.com/wp-content/uploads/2022/05/liv-golf-logo.png?ssl=1' },
+            { key: 'tourlogo:PGA', value: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/77/PGA_Tour_logo.svg/1200px-PGA_Tour_logo.svg.png' },
+            { key: 'tourlogo:DP', value: 'https://sportspro.com/wp-content/uploads/2023/03/DP-World-Tour-Logo.png' },
+            { key: 'tourlogo:LPGA', value: 'https://cdn.cookielaw.org/logos/9c8a7e84-2713-496b-bb8b-4ab1c7aa9853/01917b66-958c-71d8-80e3-efefcbc9cdc9/9ed04020-943b-462b-ac02-b19496f9ce72/BRD23_LOGO_-_FLAT_RGB_VERT_(1).png' },
+            { key: 'tourlogo:Champions', value: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/fe/PGA_Tour_Champions_logo.svg/640px-PGA_Tour_Champions_logo.svg.png' },
+            { key: 'sponsorlogo:TaylorMade', value: 'https://upload.wikimedia.org/wikipedia/commons/a/a0/TaylorMade.svg' },
+            { key: 'sponsorlogo:Titleist', value: 'https://upload.wikimedia.org/wikipedia/commons/d/d6/Titleist_golf_logo.png' },
+            { key: 'sponsorlogo:Callaway', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Callaway_Golf_Company_logo.svg/2560px-Callaway_Golf_Company_logo.svg.png' },
+            { key: 'sponsorlogo:Ping', value: 'https://upload.wikimedia.org/wikipedia/commons/3/37/Ping-logo.png' },
+            { key: 'sponsorlogo:Mizuno', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/MIZUNO_logo.svg/2560px-MIZUNO_logo.svg.png' },
+            { key: 'sponsorlogo:Srixon', value: 'https://upload.wikimedia.org/wikipedia/commons/f/f5/Srixon_golf_logo.PNG' },
+            { key: 'sponsorlogo:Wilson', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wilson-logo.svg/1024px-Wilson-logo.svg.png' },
+            { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
+            { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
+            { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' }
+        ];
+        for (const { key, value } of data) {
+            yield redisClient_1.redisClient.set(key, value);
+        }
+        console.log('Redis pre-warmed with initial data');
+    }
+    catch (error) {
+        console.error('Error pre-warming Redis:', error);
+    }
+});
 const app = (0, express_1.default)();
 const port = process.env.REACT_APP_PORT;
 dotenv_1.default.config();
@@ -33,6 +63,32 @@ app.use((req, res, next) => {
     res.header("Access-Control-Allow-Headers", "Content-Type");
     next();
 });
+(0, redisClient_1.connectRedis)();
+preWarmRedis();
+// Endpoint to set a key-value pair, if the value is complex (use this for the decider graph).
+app.post('/api/redis', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { key, value } = req.body;
+    try {
+        yield redisClient_1.redisClient.set(key, JSON.stringify(value)); // Serialize complex objects
+        res.status(200).send({ message: 'Key-Value pair saved to Redis' });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send({ error: 'Error saving data to Redis' });
+    }
+}));
+// Endpoint to get a value by key
+app.get('/api/redis/:key', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { key } = req.params;
+    try {
+        const value = yield redisClient_1.redisClient.get(key);
+        res.status(200).send({ key, value: value ? JSON.parse(value) : null });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send({ error: 'Error retrieving data from Redis' });
+    }
+}));
 const router = express_1.default.Router();
 router.post('/api/renderabl', renderableBe);
 router.post('/api/generateRenderabl', generateComponent);
@@ -240,6 +296,9 @@ function golfPlayerAgent(player, year) {
                 golfPlayerCard: parsedOutput,
                 cardType: "player"
             };
+            // Get Sponsor and Tour logos from Redis.
+            parsedOutput.sponsorLogoUrl = yield redisClient_1.redisClient.get((0, redisUtils_1.createSponsorLogoKey)(parsedOutput.sponsor));
+            parsedOutput.tourLogoUrl = yield redisClient_1.redisClient.get((0, redisUtils_1.createTourLogoKey)(parsedOutput.tour));
             return messageResponse;
         }
         catch (error) {
@@ -367,7 +426,7 @@ function generateComponent(req, res) {
             return res.status(400).json({ error: "Prompt is required" });
         }
         (0, renderableFeUtils_1.generateComponentFile)(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
-        (0, fakedb_1.addAgent)(prompt.agentName, prompt.outputPath);
+        redisClient_1.redisClient.set((0, redisUtils_1.createFileKey)(prompt.agentName), prompt.outputPath);
         return res.status(200);
     });
 }
@@ -380,7 +439,11 @@ function mutateComponent(req, res) {
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
-        (0, renderableFeUtils_1.mutateComponentFile)(prompt.agentName, prompt.mutation);
+        const fileLocation = yield redisClient_1.redisClient.get((0, redisUtils_1.createFileKey)(prompt.agentName));
+        if (!fileLocation) {
+            return res.status(400).json({ error: "File location not found" });
+        }
+        (0, renderableFeUtils_1.mutateComponentFile)(fileLocation, prompt.agentName, prompt.mutation);
         return res.status(200);
     });
 }

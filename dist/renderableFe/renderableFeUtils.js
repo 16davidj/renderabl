@@ -16,7 +16,6 @@ exports.mutateComponentFile = exports.generateComponentFile = exports.concatenat
 const fs_1 = __importDefault(require("fs"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const openai_1 = require("openai");
-const fakedb_1 = require("../renderableBe/fakedb");
 dotenv_1.default.config();
 const concatenateComponentFiles = (fileDirectories, directoryPath) => {
     let concatenatedContent = '';
@@ -62,8 +61,7 @@ const generateComponentFile = (directoryPath, agentName, agentProps, agentDescri
     return;
 });
 exports.generateComponentFile = generateComponentFile;
-const mutateComponentFile = (agentName, userPrompt) => __awaiter(void 0, void 0, void 0, function* () {
-    const fileLocation = (0, fakedb_1.getAgent)(agentName);
+const mutateComponentFile = (fileLocation, agentName, userPrompt) => __awaiter(void 0, void 0, void 0, function* () {
     const fileStats = fs_1.default.statSync(fileLocation);
     if (fileStats.isFile() && fileLocation.endsWith('.tsx')) {
         const fileContent = fs_1.default.readFileSync(fileLocation, 'utf-8');

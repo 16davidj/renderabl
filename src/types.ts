@@ -1,18 +1,7 @@
 import { z } from "zod";
-
-export type PersonCardProps = {
-  name: string;
-  summary: string;
-  birthday: string;
-  death?: string;
-  age: number;
-  occupation: string;
-  almaMater: string;
-  hometown: string;
-  spouses?: string[];
-  awards?: string[];
-  profilePictureUrl?: string;
-};
+import { PersonCardProps } from "./generalcards/personcard";
+import { GolfTournamentCardProps } from "./golfcards/golftournamentcard";
+import { GolfPlayerCardProps } from "./golfcards/golfplayercard";
 
 export const PersonCardStructure = z.object({
     name: z.string(),
@@ -27,25 +16,6 @@ export const PersonCardStructure = z.object({
     awards: z.array(z.string()),
     profilePictureUrl: z.string().optional(),
 })
-
-export type GolfPlayerCardProps = {
-  name: string;
-  year?: number;
-  height: string;
-  birthday: string;
-  rank: number;
-  tour: "LIV" | "PGA" | "DP" | "Korn Ferry" | "Asia" | "LPGA" | "Champions";
-  almaMater: string;
-  hometown: string;
-  firstWin?: string;
-  recentWin?: string;
-  profilePictureUrl?: string;
-  sponsor?: string;
-  clubs: string[];
-  ball: string;
-  messages: Message[],
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
-};
 
 export const GolfPlayerCardStructure = z.object({
   name: z.string(),
@@ -71,22 +41,6 @@ const PlayerScore = z.object({
 })
 
 export type PlayerScoreType = z.infer<typeof PlayerScore>;
-
-export type GolfTournamentCardProps = {
-  name: string;
-  location: string;
-  course: string;
-  summary: string;
-  dates: string;
-  weather: string;
-  purse: number;
-  players: PlayerScoreType[];
-  coursePictureUrl?: string;
-  ytHighlightsId?: string;
-  year: number;
-  messages: Message[],
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
-}
 
 export const GolfTournamentCardStructure = z.object({
   name: z.string(),
