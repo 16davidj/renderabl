@@ -105,8 +105,6 @@ export interface TrafficData {
   qps: number;
 }
 
-export type HandlerPerformanceMap = Map<string, TrafficData[]>;
-
 export type MonitoringGraphProps = {
   handlerName: string;
   inputData: { timestamp: number; qps: number }[];

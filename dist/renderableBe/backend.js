@@ -21,6 +21,7 @@ const zod_1 = require("openai/helpers/zod");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const renderableFeUtils_1 = require("../renderableFe/renderableFeUtils");
+const fakedb_1 = require("./fakedb");
 const app = (0, express_1.default)();
 const port = process.env.REACT_APP_PORT;
 dotenv_1.default.config();
@@ -35,6 +36,7 @@ app.use((req, res, next) => {
 const router = express_1.default.Router();
 router.post('/api/renderabl', renderableBe);
 router.post('/api/generateRenderabl', generateComponent);
+router.post('/api/mutateRenderabl', mutateComponent);
 app.use(router);
 const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const tools = [
@@ -365,6 +367,20 @@ function generateComponent(req, res) {
             return res.status(400).json({ error: "Prompt is required" });
         }
         (0, renderableFeUtils_1.generateComponentFile)(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
+        (0, fakedb_1.addAgent)(prompt.agentName, prompt.outputPath);
+        return res.status(200);
+    });
+}
+function mutateComponent(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const prompt = req.body;
+        if (!req.is('application/json')) {
+            return res.status(400).json({ error: 'Invalid request body' });
+        }
+        if (!prompt) {
+            return res.status(400).json({ error: "Prompt is required" });
+        }
+        (0, renderableFeUtils_1.mutateComponentFile)(prompt.agentName, prompt.mutation);
         return res.status(200);
     });
 }

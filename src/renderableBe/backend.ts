@@ -4,8 +4,8 @@ import {GolfPlayerCardStructure, GolfTournamentCardProps, GolfPlayerCardProps, M
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { getTrafficData } from './fakedb';
-import { generateComponentFile } from '../renderableFe/renderableFeUtils';
+import { generateComponentFile, mutateComponentFile } from '../renderableFe/renderableFeUtils';
+import { addAgent, getAgent } from './fakedb';
 
 const app = express();
 const port = process.env.REACT_APP_PORT;
@@ -23,6 +23,7 @@ app.use((req, res, next) => {
 const router = express.Router();
 router.post('/api/renderabl', renderableBe as (req: Request, res: Response) => void);
 router.post('/api/generateRenderabl', generateComponent as (req: Request, res: Response) => void)
+router.post('/api/mutateRenderabl', mutateComponent as (req: Request, res: Response) => void)
 app.use(router)
 
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -286,7 +287,6 @@ async function chatAgent(prompt : Message[]) : Promise<Message> {
   }
 }
 
-
 // function monitoringGraphAgent(handlerName : string) : Message {
 //   const response : Message = {
 //     role: "system",
@@ -345,6 +345,19 @@ async function generateComponent(req:Request, res:Response) {
     return res.status(400).json({error: "Prompt is required"});
   }
   generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
+  addAgent(prompt.agentName, prompt.outputPath);
+  return res.status(200)
+}
+
+async function mutateComponent(req:Request, res:Response) {
+  const prompt = req.body;
+  if (!req.is('application/json')) {
+      return res.status(400).json({ error: 'Invalid request body' });
+  }
+  if (!prompt) {
+    return res.status(400).json({error: "Prompt is required"});
+  }
+  mutateComponentFile(prompt.agentName, prompt.mutation);
   return res.status(200)
 }
 

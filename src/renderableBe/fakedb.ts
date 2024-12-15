@@ -1,6 +1,6 @@
-import {HandlerPerformanceMap, TrafficData} from '../types'
+import {TrafficData} from '../types'
   
-const performanceMap: HandlerPerformanceMap = new Map();
+const performanceMap: Map<string, TrafficData[]> = new Map();
 performanceMap.set("GetSampleHandler", [
   // points are diurnal
   // Nighttime (low QPS)
@@ -51,6 +51,31 @@ performanceMap.set("GetSampleHandler", [
   { timestamp: 1695740240000, qps: 25 },
   { timestamp: 1695740300000, qps: 17 },
 ]);
+
+// maps agent name to file path to component with both the props and the .tsx component.
+const agentMap : Map<string, string> = new Map();
+
+export function addAgent(name : string, path : string) {
+  console.log(name);
+  console.log(path);
+  agentMap.set(name, path);
+}
+
+export function getAgent(name : string) : string {
+  console.log(name);
+  console.log("inside getAgent");
+  console.log(agentMap.size);
+  for (const [key, value] of agentMap) {
+    console.log(key);
+    console.log(value);
+  }
+  if (agentMap.has(name)) {
+    console.log("found agent");
+    console.log(agentMap.get(name));
+    return agentMap.get(name)
+  }
+  return ""
+}
 
 
 export function getTrafficData(name : string) : TrafficData[] {

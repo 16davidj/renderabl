@@ -24,3 +24,20 @@ npx tailwindcss -i ./src/sampleApp/app.css -o ./src/sampleApp/output.css
 /src/sampleApp is a sample chatbot that takes in prompts and responds with UI cards. This would normally be an example of a client company which has an app that takes in text prompts, and want UI cards. I just happend to create a sample app so that I can pretend to be the client, and have a better understanding of what part of the workflows I can automate with Renderabl FE and BE.
 
 /src/types.ts contains all the types and props.
+
+# Example generation request
+I use Postman, and create a Post request to http://localhost:5500/api/generateRenderabl, with a raw body of:
+{
+    "directoryPath": "/Users/David/Desktop/renderabl/src/golfcards",
+    "agentName": "GolfBallAgent",
+    "agentProps": "picture_url: string, name: string, summary:string, launch:string, spin: string, firmness:string, players_who_used:string[]",
+    "agentDescription": "A chat agent designed to show UI card components about various golf balls",
+    "outputPath": "/Users/David/Desktop/renderabl/src/golfcards/golfballcard.tsx"
+}
+
+# Example mutation request
+http://localhost:5500/api/mutateRenderabl, with a raw body of:
+{
+    "agentName": "GolfBallAgent",
+    "mutation" : "Please add to the UI component so that it can display info about the golf ball's material on the inside (eg. urethane). The field should be a string."
+}
