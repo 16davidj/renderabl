@@ -12,10 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mutateComponentFile = exports.generateComponentFile = exports.concatenateComponentFiles = void 0;
+exports.generateToolNode = exports.mutateComponentFile = exports.generateComponentFile = exports.concatenateComponentFiles = void 0;
 const fs_1 = __importDefault(require("fs"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const openai_1 = require("openai");
+const types_1 = require("../types");
+const zod_1 = require("openai/helpers/zod");
 dotenv_1.default.config();
 const concatenateComponentFiles = (fileDirectories, directoryPath) => {
     let concatenatedContent = '';
@@ -93,4 +95,19 @@ const mutateComponentFile = (fileLocation, agentName, userPrompt) => __awaiter(v
     return;
 });
 exports.mutateComponentFile = mutateComponentFile;
+const generateToolNode = (prompt, existingToolsJson) => __awaiter(void 0, void 0, void 0, function* () {
+    const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const userPrompt = { role: "user", content: prompt };
+    const response = yield openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{
+                role: "system",
+                content: `You are a helpful assistant that generates a tools array, which helps decide which function to call when using function calling. The existing tools are defined as: ${existingToolsJson}.`
+            }, userPrompt],
+        response_format: (0, zod_1.zodResponseFormat)(types_1.ChatCompletionToolSchema, "tool_structure"),
+    });
+    const content = JSON.parse(response.choices[0].message.content);
+    return content;
+});
+exports.generateToolNode = generateToolNode;
 //# sourceMappingURL=renderableFeUtils.js.map

@@ -7,88 +7,9 @@ import { PersonCardProps } from '../generalcards/personcard';
 import { zodResponseFormat } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { generateComponentFile, mutateComponentFile } from '../renderableFe/renderableFeUtils';
+import { generateComponentFile, generateToolNode, mutateComponentFile } from '../renderableFe/renderableFeUtils';
 import { connectRedis, redisClient } from '../redis/redisClient';
 import { createFileKey, createSponsorLogoKey, createTourLogoKey } from '../redis/redisUtils';
-
-const preWarmRedis = async () => {
-  try {
-    // Example: Preload some key-value pairs necessary to render logos.
-    const data = [
-      { key: 'tourlogo:LIV', value: 'https://i0.wp.com/golfblogger.com/wp-content/uploads/2022/05/liv-golf-logo.png?ssl=1' },
-      { key: 'tourlogo:PGA', value: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/77/PGA_Tour_logo.svg/1200px-PGA_Tour_logo.svg.png' },
-      { key: 'tourlogo:DP', value: 'https://sportspro.com/wp-content/uploads/2023/03/DP-World-Tour-Logo.png' },
-      { key: 'tourlogo:LPGA', value: 'https://cdn.cookielaw.org/logos/9c8a7e84-2713-496b-bb8b-4ab1c7aa9853/01917b66-958c-71d8-80e3-efefcbc9cdc9/9ed04020-943b-462b-ac02-b19496f9ce72/BRD23_LOGO_-_FLAT_RGB_VERT_(1).png' },
-      { key: 'tourlogo:Champions', value: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/fe/PGA_Tour_Champions_logo.svg/640px-PGA_Tour_Champions_logo.svg.png' },
-      { key: 'sponsorlogo:TaylorMade', value: 'https://upload.wikimedia.org/wikipedia/commons/a/a0/TaylorMade.svg' },
-      { key: 'sponsorlogo:Titleist', value: 'https://upload.wikimedia.org/wikipedia/commons/d/d6/Titleist_golf_logo.png' },
-      { key: 'sponsorlogo:Callaway', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Callaway_Golf_Company_logo.svg/2560px-Callaway_Golf_Company_logo.svg.png' },
-      { key: 'sponsorlogo:Ping', value: 'https://upload.wikimedia.org/wikipedia/commons/3/37/Ping-logo.png' },
-      { key: 'sponsorlogo:Mizuno', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/MIZUNO_logo.svg/2560px-MIZUNO_logo.svg.png' },
-      { key: 'sponsorlogo:Srixon', value: 'https://upload.wikimedia.org/wikipedia/commons/f/f5/Srixon_golf_logo.PNG' },
-      { key: 'sponsorlogo:Wilson', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wilson-logo.svg/1024px-Wilson-logo.svg.png' },
-      { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
-      { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
-      { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' }
-    ];
-
-    for (const { key, value } of data) {
-      await redisClient.set(key, value);
-    }
-    console.log('Redis pre-warmed with initial data');
-  } catch (error) {
-    console.error('Error pre-warming Redis:', error);
-  }
-};
-
-const app = express();
-const port = process.env.REACT_APP_PORT;
-dotenv.config();
-
-app.use(express.json())
-app.use(cors({origin: '*'}))
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type");
-    next();
-  });
-
-connectRedis();
-preWarmRedis();
-
-// Endpoint to set a key-value pair, if the value is complex (use this for the decider graph).
-app.post('/api/redis', async (req, res) => {
-  const { key, value } = req.body;
-  try {
-    await redisClient.set(key, JSON.stringify(value)); // Serialize complex objects
-    res.status(200).send({ message: 'Key-Value pair saved to Redis' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ error: 'Error saving data to Redis' });
-  }
-});
-
-// Endpoint to get a value by key
-app.get('/api/redis/:key', async (req, res) => {
-  const { key } = req.params;
-  try {
-    const value = await redisClient.get(key);
-    res.status(200).send({ key, value: value ? JSON.parse(value) : null });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ error: 'Error retrieving data from Redis' });
-  }
-});
-
-const router = express.Router();
-router.post('/api/renderabl', renderableBe as (req: Request, res: Response) => void);
-router.post('/api/generateRenderabl', generateComponent as (req: Request, res: Response) => void)
-router.post('/api/mutateRenderabl', mutateComponent as (req: Request, res: Response) => void)
-
-app.use(router)
-
-const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
 const tools: OpenAI.ChatCompletionTool[] = [
   {
@@ -174,6 +95,86 @@ const tools: OpenAI.ChatCompletionTool[] = [
     }
   }
 ];
+
+const preWarmRedis = async () => {
+  try {
+    // Example: Preload some key-value pairs necessary to render logos.
+    const data = [
+      { key: 'tourlogo:LIV', value: 'https://i0.wp.com/golfblogger.com/wp-content/uploads/2022/05/liv-golf-logo.png?ssl=1' },
+      { key: 'tourlogo:PGA', value: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/77/PGA_Tour_logo.svg/1200px-PGA_Tour_logo.svg.png' },
+      { key: 'tourlogo:DP', value: 'https://sportspro.com/wp-content/uploads/2023/03/DP-World-Tour-Logo.png' },
+      { key: 'tourlogo:LPGA', value: 'https://cdn.cookielaw.org/logos/9c8a7e84-2713-496b-bb8b-4ab1c7aa9853/01917b66-958c-71d8-80e3-efefcbc9cdc9/9ed04020-943b-462b-ac02-b19496f9ce72/BRD23_LOGO_-_FLAT_RGB_VERT_(1).png' },
+      { key: 'tourlogo:Champions', value: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/fe/PGA_Tour_Champions_logo.svg/640px-PGA_Tour_Champions_logo.svg.png' },
+      { key: 'sponsorlogo:TaylorMade', value: 'https://upload.wikimedia.org/wikipedia/commons/a/a0/TaylorMade.svg' },
+      { key: 'sponsorlogo:Titleist', value: 'https://upload.wikimedia.org/wikipedia/commons/d/d6/Titleist_golf_logo.png' },
+      { key: 'sponsorlogo:Callaway', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Callaway_Golf_Company_logo.svg/2560px-Callaway_Golf_Company_logo.svg.png' },
+      { key: 'sponsorlogo:Ping', value: 'https://upload.wikimedia.org/wikipedia/commons/3/37/Ping-logo.png' },
+      { key: 'sponsorlogo:Mizuno', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/MIZUNO_logo.svg/2560px-MIZUNO_logo.svg.png' },
+      { key: 'sponsorlogo:Srixon', value: 'https://upload.wikimedia.org/wikipedia/commons/f/f5/Srixon_golf_logo.PNG' },
+      { key: 'sponsorlogo:Wilson', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Wilson-logo.svg/1024px-Wilson-logo.svg.png' },
+      { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
+      { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
+      { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
+      { key: 'toolGraph', value: JSON.stringify(tools)}
+    ];
+
+    for (const { key, value } of data) {
+      await redisClient.set(key, value);
+    }
+    console.log('Redis pre-warmed with initial data');
+  } catch (error) {
+    console.error('Error pre-warming Redis:', error);
+  }
+};
+
+const app = express();
+const port = process.env.REACT_APP_PORT;
+dotenv.config();
+
+app.use(express.json())
+app.use(cors({origin: '*'}))
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    next();
+  });
+
+connectRedis();
+preWarmRedis();
+
+// Endpoint to set a key-value pair, if the value is complex (use this for the decider graph).
+app.post('/api/redis', async (req, res) => {
+  const { key, value } = req.body;
+  try {
+    await redisClient.set(key, JSON.stringify(value)); // Serialize complex objects
+    res.status(200).send({ message: 'Key-Value pair saved to Redis' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'Error saving data to Redis' });
+  }
+});
+
+// Endpoint to get a value by key
+app.get('/api/redis/:key', async (req, res) => {
+  const { key } = req.params;
+  try {
+    const value = await redisClient.get(key);
+    res.status(200).send({ key, value: value ? JSON.parse(value) : null });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'Error retrieving data from Redis' });
+  }
+});
+
+const router = express.Router();
+router.post('/api/renderabl', renderableBe as (req: Request, res: Response) => void);
+router.post('/api/generateRenderabl', generateComponent as (req: Request, res: Response) => void)
+router.post('/api/mutateRenderabl', mutateComponent as (req: Request, res: Response) => void)
+
+app.use(router)
+
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
 // Use Structured Outputs and fake API calls to simulate agent.
 async function personAgent(person : string): Promise<Message> {
@@ -271,29 +272,29 @@ export async function golfPlayerAgent(player : string, year? : number): Promise<
         }, prompt],
         response_format: zodResponseFormat(GolfPlayerCardStructure, "golf_player_card_structure"),
       })
-      const pictureUrlPromise = getPictureUrl(playerInYear, 1.0);
-      const [response, profilePictureUrl] = await Promise.all([responsePromise, pictureUrlPromise]);
+    const pictureUrlPromise = getPictureUrl(playerInYear, 1.0);
+    const [response, profilePictureUrl] = await Promise.all([responsePromise, pictureUrlPromise]);
 
-      const result = response.choices[0].message.content;
-      const parsedOutput : GolfPlayerCardProps = JSON.parse(result);
-      parsedOutput.profilePictureUrl = profilePictureUrl;
-      if (year != new Date().getFullYear()) {
-        parsedOutput.year = year;
-      }
-      const messageResponse : Message = {
-        role: "system",
-        content: "chat response with a UI card about the golf player.",
-        golfPlayerCard: parsedOutput,
-        cardType: "player"
-      }
-      // Get Sponsor and Tour logos from Redis.
-      parsedOutput.sponsorLogoUrl = await redisClient.get(createSponsorLogoKey(parsedOutput.sponsor));
-      parsedOutput.tourLogoUrl = await redisClient.get(createTourLogoKey(parsedOutput.tour));
-
-      return messageResponse;
-    } catch (error) {
-      console.error('Error from OpenAI:', error)
+    const result = response.choices[0].message.content;
+    const parsedOutput : GolfPlayerCardProps = JSON.parse(result);
+    parsedOutput.profilePictureUrl = profilePictureUrl;
+    if (year != new Date().getFullYear()) {
+      parsedOutput.year = year;
     }
+    const messageResponse : Message = {
+      role: "system",
+      content: "chat response with a UI card about the golf player.",
+      golfPlayerCard: parsedOutput,
+      cardType: "player"
+    }
+    // Get Sponsor and Tour logos from Redis.
+    parsedOutput.sponsorLogoUrl = await redisClient.get(createSponsorLogoKey(parsedOutput.sponsor));
+    parsedOutput.tourLogoUrl = await redisClient.get(createTourLogoKey(parsedOutput.tour));
+
+    return messageResponse;
+  } catch (error) {
+    console.error('Error from OpenAI:', error)
+  }
 }
 
 // Use Structured Outputs and fake API calls to simulate golf player agent.
@@ -410,7 +411,15 @@ async function generateComponent(req:Request, res:Response) {
   if (!prompt) {
     return res.status(400).json({error: "Prompt is required"});
   }
-  generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
+  const generateComponentPromise = generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
+  const toolGraphJson = await redisClient.get('toolGraph');
+  const generateToolNodePromise = generateToolNode(prompt.arguments, await redisClient.get('toolGraph'));
+  const [_, toolNode] = await Promise.all([generateComponentPromise, generateToolNodePromise]);
+  const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
+  toolGraph.push(toolNode);
+  console.log('hello the new generated toolNode is', JSON.stringify(toolNode));
+  redisClient.set('toolGraph', JSON.stringify(toolGraph));
+  // TODO(davidjin): consider writing file content instead of output path
   redisClient.set(createFileKey(prompt.agentName), prompt.outputPath);
   return res.status(200)
 }

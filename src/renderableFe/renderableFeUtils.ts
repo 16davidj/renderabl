@@ -1,7 +1,9 @@
 import fs from 'fs';
 import dotenv from 'dotenv'
 import {OpenAI} from 'openai'
+import { Message, ChatCompletionToolSchema } from '../types';
 import { ChatCompletionMessageParam } from 'openai/resources';
+import { zodResponseFormat } from "openai/helpers/zod";
 
 dotenv.config();
 
@@ -79,4 +81,19 @@ export const mutateComponentFile = async (fileLocation : string, agentName : str
     });
   }
   return;
+}
+
+export const generateToolNode = async (prompt : string, existingToolsJson : string) : Promise<OpenAI.ChatCompletionTool> => {
+  const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
+  const userPrompt : Message = { role: "user", content: prompt }
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{
+        role: "system",
+        content: `You are a helpful assistant that generates a tools array, which helps decide which function to call when using function calling. The existing tools are defined as: ${existingToolsJson}.`
+    }, userPrompt],
+    response_format: zodResponseFormat(ChatCompletionToolSchema, "tool_structure"),
+  })
+  const content : OpenAI.ChatCompletionTool = JSON.parse(response.choices[0].message.content);
+  return content;
 }
