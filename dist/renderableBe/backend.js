@@ -428,11 +428,10 @@ function generateComponent(req, res) {
         }
         const generateComponentPromise = (0, renderableFeUtils_1.generateComponentFile)(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
         const toolGraphJson = yield redisClient_1.redisClient.get('toolGraph');
-        const generateToolNodePromise = (0, renderableFeUtils_1.generateToolNode)(prompt.arguments, yield redisClient_1.redisClient.get('toolGraph'));
+        const generateToolNodePromise = (0, renderableFeUtils_1.generateToolNode)(prompt.agentName, prompt.agentDescription, yield redisClient_1.redisClient.get('toolGraph'));
         const [_, toolNode] = yield Promise.all([generateComponentPromise, generateToolNodePromise]);
         const toolGraph = JSON.parse(toolGraphJson);
         toolGraph.push(toolNode);
-        console.log('hello the new generated toolNode is', JSON.stringify(toolNode));
         redisClient_1.redisClient.set('toolGraph', JSON.stringify(toolGraph));
         // TODO(davidjin): consider writing file content instead of output path
         redisClient_1.redisClient.set((0, redisUtils_1.createFileKey)(prompt.agentName), prompt.outputPath);

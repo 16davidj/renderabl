@@ -83,17 +83,19 @@ export const mutateComponentFile = async (fileLocation : string, agentName : str
   return;
 }
 
-export const generateToolNode = async (prompt : string, existingToolsJson : string) : Promise<OpenAI.ChatCompletionTool> => {
+export const generateToolNode = async (agentName : string, agentDescription : string, existingToolsJson : string) : Promise<OpenAI.ChatCompletionTool> => {
   const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
-  const userPrompt : Message = { role: "user", content: prompt }
+  const description = `The agent name is ${agentName}. The description of the agent is: ${agentDescription}.`;
+  const userPrompt : Message = { role: "user", content: description }
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [{
         role: "system",
         content: `You are a helpful assistant that generates a tools array, which helps decide which function to call when using function calling. The existing tools are defined as: ${existingToolsJson}.`
     }, userPrompt],
-    response_format: zodResponseFormat(ChatCompletionToolSchema, "tool_structure"),
+    response_format: zodResponseFormat(ChatCompletionToolSchema, "tool_struct"),
   })
   const content : OpenAI.ChatCompletionTool = JSON.parse(response.choices[0].message.content);
+  console.log(content)
   return content;
 }

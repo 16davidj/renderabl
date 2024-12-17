@@ -384,23 +384,23 @@ async function agentDeciderAndRunner(responseString : string) : Promise<Message>
 }
 
 async function renderableBe(req:Request, res:Response) {
-    const prompt : Message[] = req.body.messages;
-    if (!req.is('application/json')) {
-        return res.status(400).json({ error: 'Invalid request body' });
-    }
-    if (!prompt) {
-      return res.status(400).json({error: "Prompt is required"});
-    }
-    const functionCallResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{
-        role: "system",
-        content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
-    }, ...prompt],
-      tools: tools,
-    });
-    const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse))
-    return res.status(200).json(messageResponse);
+  const prompt : Message[] = req.body.messages;
+  if (!req.is('application/json')) {
+      return res.status(400).json({ error: 'Invalid request body' });
+  }
+  if (!prompt) {
+    return res.status(400).json({error: "Prompt is required"});
+  }
+  const functionCallResponse = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{
+      role: "system",
+      content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
+  }, ...prompt],
+    tools: tools,
+  });
+  const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse))
+  return res.status(200).json(messageResponse);
 }
 
 async function generateComponent(req:Request, res:Response) {
@@ -413,11 +413,10 @@ async function generateComponent(req:Request, res:Response) {
   }
   const generateComponentPromise = generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
   const toolGraphJson = await redisClient.get('toolGraph');
-  const generateToolNodePromise = generateToolNode(prompt.arguments, await redisClient.get('toolGraph'));
+  const generateToolNodePromise = generateToolNode(prompt.agentName, prompt.agentDescription, await redisClient.get('toolGraph'));
   const [_, toolNode] = await Promise.all([generateComponentPromise, generateToolNodePromise]);
   const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
   toolGraph.push(toolNode);
-  console.log('hello the new generated toolNode is', JSON.stringify(toolNode));
   redisClient.set('toolGraph', JSON.stringify(toolGraph));
   // TODO(davidjin): consider writing file content instead of output path
   redisClient.set(createFileKey(prompt.agentName), prompt.outputPath);

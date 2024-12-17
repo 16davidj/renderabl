@@ -95,18 +95,20 @@ const mutateComponentFile = (fileLocation, agentName, userPrompt) => __awaiter(v
     return;
 });
 exports.mutateComponentFile = mutateComponentFile;
-const generateToolNode = (prompt, existingToolsJson) => __awaiter(void 0, void 0, void 0, function* () {
+const generateToolNode = (agentName, agentDescription, existingToolsJson) => __awaiter(void 0, void 0, void 0, function* () {
     const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const userPrompt = { role: "user", content: prompt };
+    const description = `The agent name is ${agentName}. The description of the agent is: ${agentDescription}.`;
+    const userPrompt = { role: "user", content: description };
     const response = yield openai.chat.completions.create({
         model: "gpt-4o",
         messages: [{
                 role: "system",
                 content: `You are a helpful assistant that generates a tools array, which helps decide which function to call when using function calling. The existing tools are defined as: ${existingToolsJson}.`
             }, userPrompt],
-        response_format: (0, zod_1.zodResponseFormat)(types_1.ChatCompletionToolSchema, "tool_structure"),
+        response_format: (0, zod_1.zodResponseFormat)(types_1.ChatCompletionToolSchema, "tool_struct"),
     });
     const content = JSON.parse(response.choices[0].message.content);
+    console.log(content);
     return content;
 });
 exports.generateToolNode = generateToolNode;
