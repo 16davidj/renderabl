@@ -36,8 +36,8 @@ exports.concatenateComponentFiles = concatenateComponentFiles;
 const generateComponentFile = (directoryPath, agentName, agentProps, agentDescription, outputPath) => __awaiter(void 0, void 0, void 0, function* () {
     const fileDirectories = fs_1.default.readdirSync(directoryPath);
     const prevComponentContent = (0, exports.concatenateComponentFiles)(fileDirectories, directoryPath);
-    const prompt = { role: "user", content: `The agent name is ${agentName}, with the following properties: ${agentProps}. This is the agent description: ${agentDescription}. This is
-    a concatenated string of existing components: ${prevComponentContent}.` };
+    const prompt = { role: "user", content: `The agent name is ${agentName}, with the following properties: ${agentProps}. If the following properties are empty, please generate properties that you believe are appropriate to show in this context. 
+    This is the agent description: ${agentDescription}. This is a concatenated string of existing components: ${prevComponentContent}.` };
     const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const response = yield openai.chat.completions.create({
         model: "gpt-4o",

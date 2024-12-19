@@ -10,6 +10,8 @@ import dotenv from 'dotenv'
 import { generateComponentFile, generateToolNode, mutateComponentFile } from '../renderableFe/renderableFeUtils';
 import { connectRedis, redisClient } from '../redis/redisClient';
 import { createFileKey, createSponsorLogoKey, createTourLogoKey } from '../redis/redisUtils';
+import { ZodType, ZodTypeDef } from "zod";
+import { getPictureUrl, getYouTubeVodId } from './apiutils';
 
 const tools: OpenAI.ChatCompletionTool[] = [
   {
@@ -176,107 +178,65 @@ app.use(router)
 
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
+async function genericAgent<T extends ZodType<any, ZodTypeDef, any>>(
+  prompt : Message,
+  structure: T,
+  systemMessage: string
+): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "system",
+        content: systemMessage,
+      },
+      prompt
+    ],
+    response_format: zodResponseFormat(structure, "agent structure"),
+  });
+  return response.choices[0].message.content;
+}
+
 // Use Structured Outputs and fake API calls to simulate agent.
 async function personAgent(person : string): Promise<Message> {
-    let res:Response
     try {
       const prompt : Message = { role: "user", content: person }
-      const response = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{
-              role: "system",
-              content: "You are a helpful assistant that gathers information about a particular person."
-          }, prompt],
-          response_format: zodResponseFormat(PersonCardStructure, "person_card_structure"),
-        })
-        const result = response.choices[0].message.content;
-        const parsedOutput : PersonCardProps = JSON.parse(result);
-        if (parsedOutput.name) {
-          parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
-        }
-        const messageResponse : Message = {
-          role: "system",
-          content: "chat response with a UI card about the person.",
-          personCard: parsedOutput,
-          cardType: "person"
-        }
-        return messageResponse;
-      } catch (error) {
-        console.error('Error from OpenAI:', error)
+      const result = await genericAgent(prompt, PersonCardStructure, "You are a helpful assistant that gathers information about a particular person.");
+      const parsedOutput : PersonCardProps = JSON.parse(result);
+      // Client API calls for agent specific features not available to LLM.
+      if (parsedOutput.name) {
+        parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
       }
-}
-
-// Fetch a picture URL from Google Custom Image Search API
-// @query: the query to search for
-// @ratio: the aspect ratio the picture must satisfy
-async function getPictureUrl(query : string, ratio: number) : Promise<string> {
-  try {
-    const CX = '70fc0f5d68c984853';
-    const FILE_TYPE = 'jpg';
-    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${query}&searchType=image&num=5&fileType=${FILE_TYPE}`;
-    // Use fetch to call the Google API
-    const response = await fetch(googleApiUrl);
-    if (!response.ok) {
-      throw new Error(`Google API error: ${response.statusText}`);
-    }
-    const data = await response.json();
-    for (const item of data.items) {
-      if (item.link && item.image.width > 0 && item.image.height > 0) {
-        const aspectRatio = item.image.width / item.image.height;
-        if (aspectRatio >= ratio) {
-          return item.link
-        }
+      const messageResponse : Message = {
+        role: "system",
+        content: "chat response with a UI card about the person.",
+        personCard: parsedOutput,
+        cardType: "person"
       }
+      return messageResponse;
+    } catch (error) {
+      console.error('Error from OpenAI:', error)
     }
-  } catch (error) {
-    console.error('Error fetching data from Google API:', error);
-    return "";
-  }
-}
-
-// Fetch a youtube video id from YouTube V3 Data API
-// @query: query to search for
-async function getYouTubeVodId(query : string) : Promise<string> {
-  try {
-    const youtubeApiUrl = `https://www.googleapis.com/youtube/v3/search?key=${process.env.GOOGLE_API_KEY}&part=snippet&q=${query}&maxResults=5`;
-    const response = await fetch(youtubeApiUrl);
-    if (!response.ok) {
-      throw new Error(`YouTube API error: ${response.statusText}`);
-    }
-    const data = await response.json();
-    for (const item of data.items) {
-      if (item.id && item.id.videoId) {
-        return item.id.videoId;
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching data from YouTube V3 Data API:', error);
-    return "";
-  }
 }
 
 // Use Structured Outputs and fake API calls to simulate golf player agent.
-export async function golfPlayerAgent(player : string, year? : number): Promise<Message> {
-  let res:Response
+export async function golfPlayerAgent(args): Promise<Message> {
+  const player : string = args.player;
+  let year : number = args.year;
+  if (!player) {
+    console.error("Player name is required");
+    return;
+  }
+  if (!year) {
+    year = new Date().getFullYear();
+  }
   try {
-    if (!year) {
-      year = new Date().getFullYear();
-    }
-    const playerInYear = player + " in " + year;
-    const prompt : Message = { role: "user", content: playerInYear };
-    const responsePromise = openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{
-            role: "system",
-            content: "You are a helpful assistant that gathers information about a golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year."
-        }, prompt],
-        response_format: zodResponseFormat(GolfPlayerCardStructure, "golf_player_card_structure"),
-      })
-    const pictureUrlPromise = getPictureUrl(playerInYear, 1.0);
-    const [response, profilePictureUrl] = await Promise.all([responsePromise, pictureUrlPromise]);
+    const agentDescription : string = "You are a helpful assistant that gathers information about a particular golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year."; 
+    const promptContent = player + ", " + year;
+    const prompt : Message = { role: "user", content: promptContent };
+    const [response, profilePictureUrl] = await Promise.all([genericAgent(prompt, GolfPlayerCardStructure, agentDescription), getPictureUrl(promptContent, 1.0)]);
 
-    const result = response.choices[0].message.content;
-    const parsedOutput : GolfPlayerCardProps = JSON.parse(result);
+    const parsedOutput : GolfPlayerCardProps = JSON.parse(response);
     parsedOutput.profilePictureUrl = profilePictureUrl;
     if (year != new Date().getFullYear()) {
       parsedOutput.year = year;
@@ -288,8 +248,12 @@ export async function golfPlayerAgent(player : string, year? : number): Promise<
       cardType: "player"
     }
     // Get Sponsor and Tour logos from Redis.
-    parsedOutput.sponsorLogoUrl = await redisClient.get(createSponsorLogoKey(parsedOutput.sponsor));
-    parsedOutput.tourLogoUrl = await redisClient.get(createTourLogoKey(parsedOutput.tour));
+    const [sponsorLogoUrl, tourLogoUrl] = await Promise.all([
+      redisClient.get(createSponsorLogoKey(parsedOutput.sponsor)),
+      redisClient.get(createTourLogoKey(parsedOutput.tour))
+    ])
+    parsedOutput.sponsorLogoUrl = sponsorLogoUrl;
+    parsedOutput.tourLogoUrl = tourLogoUrl;
 
     return messageResponse;
   } catch (error) {
@@ -298,28 +262,26 @@ export async function golfPlayerAgent(player : string, year? : number): Promise<
 }
 
 // Use Structured Outputs and fake API calls to simulate golf player agent.
-export async function golfTournamentAgent(tournament : string, year : number): Promise<Message> {
-  let res:Response
-  try {
-    const prompt : Message = { role: "user", content: tournament + " golf tournament " + "in " + year };
-    const responsePromise = openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{
-            role: "system",
-            content: "You are a helpful assistant that gathers information about a golf tournament from a certain year."
-        }, prompt],
-        response_format: zodResponseFormat(GolfTournamentCardStructure, "golf_tournament_card_structure"),
-      })
-    const coursePicturePromise = getPictureUrl(tournament + " " + year + " golf tournament", 0.9);
-    const videoPromise = getYouTubeVodId(tournament + " " + year + " golf tournament highlights");
-    const [response, coursePictureUrl, ytHighlightsId] = await Promise.all([responsePromise, coursePicturePromise, videoPromise]);
+export async function golfTournamentAgent(args): Promise<Message> {
+  const tournament : string = args.tournament;
+  const year : number = args.year;
+  
+  if(!tournament) {
+    console.error("Tournament name is required");
+    return;
+  }
 
-    const result = response.choices[0].message.content;
-    const parsedOutput : GolfTournamentCardProps = JSON.parse(result);
+  try {
+    const agentDescription : string = "You are a helpful assistant that gathers information about a golf tournament in a specific year. If the year is not specified, get information from the most recent tournament.";
+    const promptContent = tournament + "golf tournament in " + year;
+    const prompt : Message = { role: "user", content: promptContent };
+    const [response, coursePictureUrl, ytHighlightsId] = await Promise.all([genericAgent(
+        prompt, GolfTournamentCardStructure, agentDescription),
+        getPictureUrl(promptContent, 0.9), getYouTubeVodId(promptContent + " highlights")
+      ]);
+    const parsedOutput : GolfTournamentCardProps = JSON.parse(response);
     parsedOutput.coursePictureUrl = coursePictureUrl;
     parsedOutput.ytHighlightsId = ytHighlightsId;
-    console.log(coursePictureUrl)
-    console.log(ytHighlightsId)
     const messageResponse : Message = {
       role: "system",
       content: "chat response with a UI card about the golf tournament.",
@@ -333,8 +295,12 @@ export async function golfTournamentAgent(tournament : string, year : number): P
 }
 
 // Generic chat response agent.
-async function chatAgent(prompt : Message[]) : Promise<Message> {
-  let res:Response
+async function chatAgent(args) : Promise<Message> {
+  const prompt : Message[] = args.messages;
+  if (!prompt) {
+    console.error("Prompt for chat agent is required");
+    return;
+  }
   try {
     const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
@@ -371,15 +337,15 @@ async function agentDeciderAndRunner(responseString : string) : Promise<Message>
   const args = JSON.parse(toolCall.function.arguments);
   switch (functionName) {
     case "chatAgent":
-      return chatAgent(args.messages);
+      return chatAgent(args);
     // case "personAgent":
     //   return personAgent(args.person);
     // case "monitoringGraphAgent":
     //   return monitoringGraphAgent(args.handlerName);
     case "golfPlayerAgent":
-      return args.year ? golfPlayerAgent(args.player, args.year) : golfPlayerAgent(args.player); 
+      return golfPlayerAgent(args); 
     case "golfTournamentAgent":
-      return golfTournamentAgent(args.tournament, args.year);
+      return golfTournamentAgent(args);
   } 
 }
 
