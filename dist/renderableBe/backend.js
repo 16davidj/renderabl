@@ -23,90 +23,8 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const renderableFeUtils_1 = require("../renderableFe/renderableFeUtils");
 const redisClient_1 = require("../redis/redisClient");
 const redisUtils_1 = require("../redis/redisUtils");
-const tools = [
-    {
-        type: "function",
-        function: {
-            name: "chatAgent",
-            description: "Default to this whenever the other tools, such as personAgent, are not appropriate. Do not respond to the chat message itself.",
-            parameters: {
-                type: "object",
-                properties: {
-                    messages: {
-                        type: "array",
-                        items: {
-                            type: "object",
-                            properties: {
-                                role: { type: "string", enum: ["system", "user", "assistant"], description: "The role of the sender of the chat message" },
-                                content: { type: "string", description: "The content of the chat message" },
-                            },
-                            required: ["role", "content"],
-                        },
-                    },
-                },
-                required: ["messages"],
-            },
-        }
-    },
-    // {
-    //   type: "function",
-    //   function: {
-    //     name: "personAgent",
-    //     description: "Get information about a person. Call whenever you need to respond to a prompt that asks about a person.",
-    //     parameters: {
-    //       type: "object",
-    //       properties: {
-    //         person: { type: "string", description: "The name of the person to get information on." },
-    //       },
-    //       required: ["person"],
-    //     },
-    //   }
-    // },
-    // {
-    //   type: "function",
-    //   function: {
-    //     name: "monitoringGraphAgent",
-    //     description: "Get monitoring graph data. Call whenever you need to respond to a prompt that asks for monitoring graph data of a handler.",
-    //     parameters: {
-    //       type: "object",
-    //       properties: {
-    //         handlerName: { type: "string", description: "The name of the handler to get monitoring graph data on." },
-    //       },
-    //       required: ["handlerName"],
-    //     },
-    //   }
-    // },
-    {
-        type: "function",
-        function: {
-            name: "golfPlayerAgent",
-            description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player, and maybe from a specific year.",
-            parameters: {
-                type: "object",
-                properties: {
-                    player: { type: "string", description: "The name of the golf player to get information on." },
-                    year: { type: "number", description: "The year to get information about the golf player. If not specified, get the current year information." }
-                },
-                required: ["player"],
-            },
-        }
-    },
-    {
-        type: "function",
-        function: {
-            name: "golfTournamentAgent",
-            description: "Get information about a golf tournament results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
-            parameters: {
-                type: "object",
-                properties: {
-                    tournament: { type: "string", description: "The name of the golf tournament to get information on." },
-                    year: { type: "number", description: "The year to get information about the golf tournament." }
-                },
-                required: ["tournament", "year"],
-            },
-        }
-    }
-];
+const apiutils_1 = require("./apiutils");
+const fakedb_1 = require("./fakedb");
 const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // Example: Preload some key-value pairs necessary to render logos.
@@ -126,7 +44,7 @@ const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
             { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
             { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
             { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
-            { key: 'toolGraph', value: JSON.stringify(tools) }
+            { key: 'toolGraph', value: JSON.stringify(fakedb_1.tools) }
         ];
         for (const { key, value } of data) {
             yield redisClient_1.redisClient.set(key, value);
@@ -137,6 +55,12 @@ const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
         console.error('Error pre-warming Redis:', error);
     }
 });
+const toolsDeciderMap = new Map();
+toolsDeciderMap.set("chatAgent", chatAgent);
+toolsDeciderMap.set("golfPlayerAgent", golfPlayerAgent);
+toolsDeciderMap.set("golfTournamentAgent", golfTournamentAgent);
+// toolsDeciderMap.set("personAgent", (args) => personAgent(args.person));
+// toolsDeciderMap.set("monitoringGraphAgent", (args) => monitoringGraphAgent(args.handlerName));
 const app = (0, express_1.default)();
 const port = process.env.REACT_APP_PORT;
 dotenv_1.default.config();
@@ -191,12 +115,11 @@ function genericAgent(prompt, structure, systemMessage) {
                 },
                 prompt
             ],
-            response_format: (0, zod_1.zodResponseFormat)(structure, "agent structure"),
+            response_format: (0, zod_1.zodResponseFormat)(structure, "agent_structure"),
         });
         return response.choices[0].message.content;
     });
 }
-// Use Structured Outputs and fake API calls to simulate agent.
 function personAgent(person) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -205,7 +128,7 @@ function personAgent(person) {
             const parsedOutput = JSON.parse(result);
             // Client API calls for agent specific features not available to LLM.
             if (parsedOutput.name) {
-                parsedOutput.profilePictureUrl = yield getPictureUrl(parsedOutput.name, 1.0);
+                parsedOutput.profilePictureUrl = yield (0, apiutils_1.getPictureUrl)(parsedOutput.name, 1.0);
             }
             const messageResponse = {
                 role: "system",
@@ -220,7 +143,6 @@ function personAgent(person) {
         }
     });
 }
-// Use Structured Outputs and fake API calls to simulate golf player agent.
 function golfPlayerAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
         const player = args.player;
@@ -234,9 +156,10 @@ function golfPlayerAgent(args) {
         }
         try {
             const agentDescription = "You are a helpful assistant that gathers information about a particular golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year.";
-            const promptContent = player + ", " + year;
+            // for whatever reason, GPT doesn't like the comma in the prompt, so I used "in" instead
+            const promptContent = player + " in " + year;
             const prompt = { role: "user", content: promptContent };
-            const [response, profilePictureUrl] = yield Promise.all([genericAgent(prompt, types_1.GolfPlayerCardStructure, agentDescription), getPictureUrl(promptContent, 1.0)]);
+            const [response, profilePictureUrl] = yield Promise.all([genericAgent(prompt, types_1.GolfPlayerCardStructure, agentDescription), (0, apiutils_1.getPictureUrl)(promptContent, 1.0)]);
             const parsedOutput = JSON.parse(response);
             parsedOutput.profilePictureUrl = profilePictureUrl;
             if (year != new Date().getFullYear()) {
@@ -262,7 +185,6 @@ function golfPlayerAgent(args) {
         }
     });
 }
-// Use Structured Outputs and fake API calls to simulate golf player agent.
 function golfTournamentAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
         const tournament = args.tournament;
@@ -273,10 +195,10 @@ function golfTournamentAgent(args) {
         }
         try {
             const agentDescription = "You are a helpful assistant that gathers information about a golf tournament in a specific year. If the year is not specified, get information from the most recent tournament.";
-            const promptContent = tournament + "golf tournament in " + year;
+            const promptContent = tournament + " golf tournament in " + year;
             const prompt = { role: "user", content: promptContent };
             const [response, coursePictureUrl, ytHighlightsId] = yield Promise.all([genericAgent(prompt, types_1.GolfTournamentCardStructure, agentDescription),
-                getPictureUrl(promptContent, 0.9), getYouTubeVodId(promptContent + " highlights")
+                (0, apiutils_1.getPictureUrl)(promptContent, 0.9), (0, apiutils_1.getYouTubeVodId)(promptContent + " highlights")
             ]);
             const parsedOutput = JSON.parse(response);
             parsedOutput.coursePictureUrl = coursePictureUrl;
@@ -294,7 +216,6 @@ function golfTournamentAgent(args) {
         }
     });
 }
-// Generic chat response agent.
 function chatAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
         const prompt = args.messages;
@@ -333,21 +254,14 @@ function chatAgent(args) {
 // }
 function agentDeciderAndRunner(responseString) {
     return __awaiter(this, void 0, void 0, function* () {
-        const response = JSON.parse(responseString);
-        const toolCall = response.choices[0].message.tool_calls[0];
-        const functionName = toolCall.function.name;
-        const args = JSON.parse(toolCall.function.arguments);
-        switch (functionName) {
-            case "chatAgent":
-                return chatAgent(args);
-            // case "personAgent":
-            //   return personAgent(args.person);
-            // case "monitoringGraphAgent":
-            //   return monitoringGraphAgent(args.handlerName);
-            case "golfPlayerAgent":
-                return golfPlayerAgent(args);
-            case "golfTournamentAgent":
-                return golfTournamentAgent(args);
+        try {
+            const toolCall = JSON.parse(responseString).choices[0].message.tool_calls[0];
+            const args = JSON.parse(toolCall.function.arguments);
+            const toolFunction = toolsDeciderMap.get(toolCall.function.name);
+            return toolFunction(args);
+        }
+        catch (error) {
+            console.error('Error in agentDeciderAndRunner:', error);
         }
     });
 }
@@ -366,7 +280,7 @@ function renderableBe(req, res) {
                     role: "system",
                     content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
                 }, ...prompt],
-            tools: tools,
+            tools: fakedb_1.tools,
         });
         const messageResponse = yield agentDeciderAndRunner(JSON.stringify(functionCallResponse));
         return res.status(200).json(messageResponse);

@@ -2,7 +2,6 @@ import { z } from "zod";
 import { PersonCardProps } from "./generalcards/personcard";
 import { GolfTournamentCardProps } from "./golfcards/golftournamentcard";
 import { GolfPlayerCardProps } from "./golfcards/golfplayercard";
-import OpenAI from "openai";
 
 export const PersonCardStructure = z.object({
     name: z.string(),

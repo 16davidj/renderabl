@@ -10,93 +10,9 @@ import dotenv from 'dotenv'
 import { generateComponentFile, generateToolNode, mutateComponentFile } from '../renderableFe/renderableFeUtils';
 import { connectRedis, redisClient } from '../redis/redisClient';
 import { createFileKey, createSponsorLogoKey, createTourLogoKey } from '../redis/redisUtils';
-import { ZodType, ZodTypeDef } from "zod";
+import { ZodType } from "zod";
 import { getPictureUrl, getYouTubeVodId } from './apiutils';
-
-const tools: OpenAI.ChatCompletionTool[] = [
-  {
-    type: "function",
-    function: {
-      name: "chatAgent",
-      description: "Default to this whenever the other tools, such as personAgent, are not appropriate. Do not respond to the chat message itself.",
-      parameters: {
-        type: "object",
-        properties: {
-          messages: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                role: { type: "string", enum: ["system", "user", "assistant"], description: "The role of the sender of the chat message" },
-                content: { type: "string", description: "The content of the chat message" },
-              },
-              required: ["role", "content"],
-            },
-          },
-        },
-        required: ["messages"],
-      },
-    }
-  },
-  // {
-  //   type: "function",
-  //   function: {
-  //     name: "personAgent",
-  //     description: "Get information about a person. Call whenever you need to respond to a prompt that asks about a person.",
-  //     parameters: {
-  //       type: "object",
-  //       properties: {
-  //         person: { type: "string", description: "The name of the person to get information on." },
-  //       },
-  //       required: ["person"],
-  //     },
-  //   }
-  // },
-  // {
-  //   type: "function",
-  //   function: {
-  //     name: "monitoringGraphAgent",
-  //     description: "Get monitoring graph data. Call whenever you need to respond to a prompt that asks for monitoring graph data of a handler.",
-  //     parameters: {
-  //       type: "object",
-  //       properties: {
-  //         handlerName: { type: "string", description: "The name of the handler to get monitoring graph data on." },
-  //       },
-  //       required: ["handlerName"],
-  //     },
-  //   }
-  // },
-  {
-    type: "function",
-    function: {
-      name: "golfPlayerAgent",
-      description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player, and maybe from a specific year.",
-      parameters: {
-        type: "object",
-        properties: {
-          player: { type: "string", description: "The name of the golf player to get information on." },
-          year: {type: "number", description: "The year to get information about the golf player. If not specified, get the current year information."}
-        },
-        required: ["player"],
-      },
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "golfTournamentAgent",
-      description: "Get information about a golf tournament results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
-      parameters: {
-        type: "object",
-        properties: {
-          tournament: { type: "string", description: "The name of the golf tournament to get information on." },
-          year: {type: "number", description: "The year to get information about the golf tournament."}
-        },
-        required: ["tournament", "year"],
-      },
-    }
-  }
-];
+import { tools } from './fakedb';
 
 const preWarmRedis = async () => {
   try {
@@ -128,6 +44,13 @@ const preWarmRedis = async () => {
     console.error('Error pre-warming Redis:', error);
   }
 };
+
+const toolsDeciderMap = new Map<string, (args : any) => Promise<Message>>(); 
+toolsDeciderMap.set("chatAgent", chatAgent);
+toolsDeciderMap.set("golfPlayerAgent", golfPlayerAgent);
+toolsDeciderMap.set("golfTournamentAgent", golfTournamentAgent);
+// toolsDeciderMap.set("personAgent", (args) => personAgent(args.person));
+// toolsDeciderMap.set("monitoringGraphAgent", (args) => monitoringGraphAgent(args.handlerName));
 
 const app = express();
 const port = process.env.REACT_APP_PORT;
@@ -178,7 +101,7 @@ app.use(router)
 
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
-async function genericAgent<T extends ZodType<any, ZodTypeDef, any>>(
+async function genericAgent<T extends ZodType>(
   prompt : Message,
   structure: T,
   systemMessage: string
@@ -192,34 +115,32 @@ async function genericAgent<T extends ZodType<any, ZodTypeDef, any>>(
       },
       prompt
     ],
-    response_format: zodResponseFormat(structure, "agent structure"),
+    response_format: zodResponseFormat(structure, "agent_structure"),
   });
   return response.choices[0].message.content;
 }
 
-// Use Structured Outputs and fake API calls to simulate agent.
 async function personAgent(person : string): Promise<Message> {
-    try {
-      const prompt : Message = { role: "user", content: person }
-      const result = await genericAgent(prompt, PersonCardStructure, "You are a helpful assistant that gathers information about a particular person.");
-      const parsedOutput : PersonCardProps = JSON.parse(result);
-      // Client API calls for agent specific features not available to LLM.
-      if (parsedOutput.name) {
-        parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
-      }
-      const messageResponse : Message = {
-        role: "system",
-        content: "chat response with a UI card about the person.",
-        personCard: parsedOutput,
-        cardType: "person"
-      }
-      return messageResponse;
-    } catch (error) {
-      console.error('Error from OpenAI:', error)
+  try {
+    const prompt : Message = { role: "user", content: person }
+    const result = await genericAgent(prompt, PersonCardStructure, "You are a helpful assistant that gathers information about a particular person.");
+    const parsedOutput : PersonCardProps = JSON.parse(result);
+    // Client API calls for agent specific features not available to LLM.
+    if (parsedOutput.name) {
+      parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
     }
+    const messageResponse : Message = {
+      role: "system",
+      content: "chat response with a UI card about the person.",
+      personCard: parsedOutput,
+      cardType: "person"
+    }
+    return messageResponse;
+  } catch (error) {
+    console.error('Error from OpenAI:', error)
+  }
 }
 
-// Use Structured Outputs and fake API calls to simulate golf player agent.
 export async function golfPlayerAgent(args): Promise<Message> {
   const player : string = args.player;
   let year : number = args.year;
@@ -232,10 +153,10 @@ export async function golfPlayerAgent(args): Promise<Message> {
   }
   try {
     const agentDescription : string = "You are a helpful assistant that gathers information about a particular golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year."; 
-    const promptContent = player + ", " + year;
+    // for whatever reason, GPT doesn't like the comma in the prompt, so I used "in" instead
+    const promptContent = player + " in " + year;
     const prompt : Message = { role: "user", content: promptContent };
     const [response, profilePictureUrl] = await Promise.all([genericAgent(prompt, GolfPlayerCardStructure, agentDescription), getPictureUrl(promptContent, 1.0)]);
-
     const parsedOutput : GolfPlayerCardProps = JSON.parse(response);
     parsedOutput.profilePictureUrl = profilePictureUrl;
     if (year != new Date().getFullYear()) {
@@ -261,7 +182,6 @@ export async function golfPlayerAgent(args): Promise<Message> {
   }
 }
 
-// Use Structured Outputs and fake API calls to simulate golf player agent.
 export async function golfTournamentAgent(args): Promise<Message> {
   const tournament : string = args.tournament;
   const year : number = args.year;
@@ -273,7 +193,7 @@ export async function golfTournamentAgent(args): Promise<Message> {
 
   try {
     const agentDescription : string = "You are a helpful assistant that gathers information about a golf tournament in a specific year. If the year is not specified, get information from the most recent tournament.";
-    const promptContent = tournament + "golf tournament in " + year;
+    const promptContent = tournament + " golf tournament in " + year;
     const prompt : Message = { role: "user", content: promptContent };
     const [response, coursePictureUrl, ytHighlightsId] = await Promise.all([genericAgent(
         prompt, GolfTournamentCardStructure, agentDescription),
@@ -294,7 +214,6 @@ export async function golfTournamentAgent(args): Promise<Message> {
     }
 }
 
-// Generic chat response agent.
 async function chatAgent(args) : Promise<Message> {
   const prompt : Message[] = args.messages;
   if (!prompt) {
@@ -331,22 +250,14 @@ async function chatAgent(args) : Promise<Message> {
 // }
 
 async function agentDeciderAndRunner(responseString : string) : Promise<Message> {
-  const response = JSON.parse(responseString);
-  const toolCall = response.choices[0].message.tool_calls[0];
-  const functionName = toolCall.function.name;
-  const args = JSON.parse(toolCall.function.arguments);
-  switch (functionName) {
-    case "chatAgent":
-      return chatAgent(args);
-    // case "personAgent":
-    //   return personAgent(args.person);
-    // case "monitoringGraphAgent":
-    //   return monitoringGraphAgent(args.handlerName);
-    case "golfPlayerAgent":
-      return golfPlayerAgent(args); 
-    case "golfTournamentAgent":
-      return golfTournamentAgent(args);
-  } 
+  try {
+    const toolCall = JSON.parse(responseString).choices[0].message.tool_calls[0];
+    const args = JSON.parse(toolCall.function.arguments);
+    const toolFunction = toolsDeciderMap.get(toolCall.function.name);
+    return toolFunction(args);
+  } catch (error) {
+    console.error('Error in agentDeciderAndRunner:', error)
+  }
 }
 
 async function renderableBe(req:Request, res:Response) {
