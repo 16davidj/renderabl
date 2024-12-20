@@ -87,13 +87,15 @@ export const generateToolNode = async (agentName : string, agentDescription : st
   const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
   const description = `The agent name is ${agentName}. The description of the agent is: ${agentDescription}.`;
   const userPrompt : Message = { role: "user", content: description }
+  const responseFormat = zodResponseFormat(ChatCompletionToolSchema, "tool_struct");
+  console.log(responseFormat.json_schema)
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [{
         role: "system",
         content: `You are a helpful assistant that generates a tools array, which helps decide which function to call when using function calling. The existing tools are defined as: ${existingToolsJson}.`
     }, userPrompt],
-    response_format: zodResponseFormat(ChatCompletionToolSchema, "tool_struct"),
+    //response_format: zodInfer<Parameters extends ZodType>,
   })
   const content : OpenAI.ChatCompletionTool = JSON.parse(response.choices[0].message.content);
   console.log(content)

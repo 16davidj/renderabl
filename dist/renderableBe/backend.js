@@ -23,8 +23,8 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const renderableFeUtils_1 = require("../renderableFe/renderableFeUtils");
 const redisClient_1 = require("../redis/redisClient");
 const redisUtils_1 = require("../redis/redisUtils");
+const zod_2 = require("zod");
 const apiutils_1 = require("./apiutils");
-const fakedb_1 = require("./fakedb");
 const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // Example: Preload some key-value pairs necessary to render logos.
@@ -44,7 +44,7 @@ const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
             { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
             { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
             { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
-            { key: 'toolGraph', value: JSON.stringify(fakedb_1.tools) }
+            { key: 'toolGraph', value: JSON.stringify(tools) }
         ];
         for (const { key, value } of data) {
             yield redisClient_1.redisClient.set(key, value);
@@ -55,18 +55,44 @@ const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
         console.error('Error pre-warming Redis:', error);
     }
 });
-const toolsDeciderMap = new Map();
-toolsDeciderMap.set("chatAgent", chatAgent);
-toolsDeciderMap.set("golfPlayerAgent", golfPlayerAgent);
-toolsDeciderMap.set("golfTournamentAgent", golfTournamentAgent);
-// toolsDeciderMap.set("personAgent", (args) => personAgent(args.person));
-// toolsDeciderMap.set("monitoringGraphAgent", (args) => monitoringGraphAgent(args.handlerName));
+const chatTool = (0, zod_1.zodFunction)({
+    name: "chatAgent",
+    description: "Default to this whenever the other tools, such as personAgent, are not appropriate. Do not respond to the chat message itself.",
+    parameters: zod_2.z.object({
+        messages: zod_2.z.array(zod_2.z.object({
+            role: zod_2.z.enum(["system", "user", "assistant"]).describe("The role of the sender of the chat message"),
+            content: zod_2.z.string().describe("The content of the chat message"),
+        }))
+    }),
+    function: chatAgent,
+});
+const golfPlayerTool = (0, zod_1.zodFunction)({
+    name: "golfPlayerAgent",
+    description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player, and maybe from a specific year.",
+    parameters: zod_2.z.object({
+        player: zod_2.z.string().describe("The name of the golf player to get information on."),
+        year: zod_2.z.number()
+            .optional()
+            .describe("The year to get information about the golf player. If not specified, leave empty."),
+    }),
+    function: golfPlayerAgent,
+});
+const golfTournamentTool = (0, zod_1.zodFunction)({
+    name: "golfTournamentAgent",
+    description: "Get information about a golf tournament's results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
+    parameters: zod_2.z.object({
+        tournament: zod_2.z.string().describe("The name of the golf tournament to get information on."),
+        year: zod_2.z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
+    }),
+    function: golfTournamentAgent
+});
+let tools = [chatTool, golfPlayerTool, golfTournamentTool];
 const app = (0, express_1.default)();
 const port = process.env.REACT_APP_PORT;
 dotenv_1.default.config();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: '*' }));
-app.use((req, res, next) => {
+app.use((_, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type");
@@ -188,10 +214,13 @@ function golfPlayerAgent(args) {
 function golfTournamentAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
         const tournament = args.tournament;
-        const year = args.year;
+        let year = args.year;
         if (!tournament) {
             console.error("Tournament name is required");
             return;
+        }
+        if (!year) {
+            year = new Date().getFullYear();
         }
         try {
             const agentDescription = "You are a helpful assistant that gathers information about a golf tournament in a specific year. If the year is not specified, get information from the most recent tournament.";
@@ -252,19 +281,6 @@ function chatAgent(args) {
 //   }
 //   return response
 // }
-function agentDeciderAndRunner(responseString) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const toolCall = JSON.parse(responseString).choices[0].message.tool_calls[0];
-            const args = JSON.parse(toolCall.function.arguments);
-            const toolFunction = toolsDeciderMap.get(toolCall.function.name);
-            return toolFunction(args);
-        }
-        catch (error) {
-            console.error('Error in agentDeciderAndRunner:', error);
-        }
-    });
-}
 function renderableBe(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const prompt = req.body.messages;
@@ -274,16 +290,16 @@ function renderableBe(req, res) {
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
-        const functionCallResponse = yield openai.chat.completions.create({
+        const runner = yield openai.beta.chat.completions.runTools({
             model: "gpt-4o",
             messages: [{
                     role: "system",
                     content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
                 }, ...prompt],
-            tools: fakedb_1.tools,
+            tools: tools,
         });
-        const messageResponse = yield agentDeciderAndRunner(JSON.stringify(functionCallResponse));
-        return res.status(200).json(messageResponse);
+        const finalContent = JSON.parse(yield runner.finalFunctionCallResult());
+        return res.status(200).json(finalContent);
     });
 }
 function generateComponent(req, res) {

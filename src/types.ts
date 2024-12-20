@@ -63,37 +63,30 @@ const baseType = z.union([
   z.literal("object"),
 ]);
 
-const parametersSchema = z.object({
-  type: z.literal("object").describe("Defines the structure of the parameters."),
-  // TODO: issue is with z.record..., skip trying to make it recursive for now.
-  properties: z.record(z.string(),
-    z.object({
-      type: z.union([
-        z.literal("string"),
-        z.literal("number"),
-        z.literal("boolean"),
-        z.literal("array"),
-        //z.literal("object"),
-      ]),
-      description: z.string().optional(),
-      //items: z.lazy(() => parametersSchema.optional()).optional(), // For arrays or nested objects
-      //properties: z.lazy(() => z.record(parametersSchema).optional()), // Nested properties
-      //required: z.array(z.string()).optional(), // Required keys for nested properties
-    })
-  ),
-  required: z
-    .array(z.string())
-    .describe("List of required parameter names."),
+const functionSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  parameters: z.object({
+    type: z.literal("object"),
+    properties: z.record(
+      z.string(),
+      z.object({
+        type: z.union([
+          z.literal("string"),
+          z.literal("number"),
+          z.literal("boolean"),
+          z.literal("array"),
+        ]),
+        description: z.string().optional(),
+      })
+    ),
+    required: z.array(z.string()),
+  }),
 });
 
 export const ChatCompletionToolSchema = z.object({
-  name: z.string().describe("The name of the function to be called. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64."),
-  description: z.string().describe("A description of what the function does, used by the model to choose when and how to call the function."),
-  parameters: parametersSchema.describe("The parameters the functions accepts, described as a JSON Schema object. See the guide](https://platform.openai.com/docs/guides/function-calling) for examples," +
-   "and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format. Omitting `parameters` defines a function with an empty parameter list."),
-  strict: z.boolean().describe("Whether to enable strict schema adherence when generating the function call. If" +
-   "set to true, the model will follow the exact schema defined in the `parameters` field. Only a subset of JSON Schema is supported when `strict` is `true`. Learn" +
-   "more about Structured Outputs in the [function calling guide](docs/guides/function-calling).")
+  type: z.literal("function"),
+  function: functionSchema
 });
 
 export interface TrafficData {

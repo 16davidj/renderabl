@@ -4,15 +4,15 @@ import { GolfPlayerCardStructure, Message, GolfTournamentCardStructure, PersonCa
 import { GolfPlayerCardProps } from '../golfcards/golfplayercard';
 import { GolfTournamentCardProps } from '../golfcards/golftournamentcard';
 import { PersonCardProps } from '../generalcards/personcard';
-import { zodResponseFormat } from "openai/helpers/zod";
+import { zodResponseFormat, zodFunction } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { generateComponentFile, generateToolNode, mutateComponentFile } from '../renderableFe/renderableFeUtils';
 import { connectRedis, redisClient } from '../redis/redisClient';
 import { createFileKey, createSponsorLogoKey, createTourLogoKey } from '../redis/redisUtils';
-import { ZodType } from "zod";
+import { ZodType, z } from "zod";
 import { getPictureUrl, getYouTubeVodId } from './apiutils';
-import { tools } from './fakedb';
+import { AutoParseableTool } from 'openai/lib/parser';
 
 const preWarmRedis = async () => {
   try {
@@ -45,12 +45,42 @@ const preWarmRedis = async () => {
   }
 };
 
-const toolsDeciderMap = new Map<string, (args : any) => Promise<Message>>(); 
-toolsDeciderMap.set("chatAgent", chatAgent);
-toolsDeciderMap.set("golfPlayerAgent", golfPlayerAgent);
-toolsDeciderMap.set("golfTournamentAgent", golfTournamentAgent);
-// toolsDeciderMap.set("personAgent", (args) => personAgent(args.person));
-// toolsDeciderMap.set("monitoringGraphAgent", (args) => monitoringGraphAgent(args.handlerName));
+const chatTool : AutoParseableTool<any, any> = zodFunction({
+  name: "chatAgent",
+  description: "Default to this whenever the other tools, such as personAgent, are not appropriate. Do not respond to the chat message itself.",
+  parameters: z.object({
+    messages: z.array(
+      z.object({
+        role: z.enum(["system", "user", "assistant"]).describe("The role of the sender of the chat message"),
+        content: z.string().describe("The content of the chat message"),
+      })
+    )
+  }), 
+  function: chatAgent,
+})
+
+const golfPlayerTool : AutoParseableTool<any, any> = zodFunction({
+  name: "golfPlayerAgent",
+  description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player, and maybe from a specific year.",
+  parameters: z.object({
+    player: z.string().describe("The name of the golf player to get information on."),
+    year: z.number()
+      .optional()
+      .describe("The year to get information about the golf player. If not specified, leave empty."),
+  }),
+  function: golfPlayerAgent,
+})
+
+const golfTournamentTool : AutoParseableTool<any, any> = zodFunction({
+  name: "golfTournamentAgent",
+  description: "Get information about a golf tournament's results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
+  parameters: z.object({
+    tournament: z.string().describe("The name of the golf tournament to get information on."),
+    year: z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
+  }),
+  function: golfTournamentAgent
+});
+let tools: AutoParseableTool<any, any>[] = [chatTool, golfPlayerTool, golfTournamentTool];
 
 const app = express();
 const port = process.env.REACT_APP_PORT;
@@ -58,7 +88,7 @@ dotenv.config();
 
 app.use(express.json())
 app.use(cors({origin: '*'}))
-app.use((req, res, next) => {
+app.use((_, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type");
@@ -175,7 +205,6 @@ export async function golfPlayerAgent(args): Promise<Message> {
     ])
     parsedOutput.sponsorLogoUrl = sponsorLogoUrl;
     parsedOutput.tourLogoUrl = tourLogoUrl;
-
     return messageResponse;
   } catch (error) {
     console.error('Error from OpenAI:', error)
@@ -184,11 +213,14 @@ export async function golfPlayerAgent(args): Promise<Message> {
 
 export async function golfTournamentAgent(args): Promise<Message> {
   const tournament : string = args.tournament;
-  const year : number = args.year;
+  let year : number = args.year;
   
   if(!tournament) {
     console.error("Tournament name is required");
     return;
+  }
+  if (!year) {
+    year = new Date().getFullYear();
   }
 
   try {
@@ -249,17 +281,6 @@ async function chatAgent(args) : Promise<Message> {
 //   return response
 // }
 
-async function agentDeciderAndRunner(responseString : string) : Promise<Message> {
-  try {
-    const toolCall = JSON.parse(responseString).choices[0].message.tool_calls[0];
-    const args = JSON.parse(toolCall.function.arguments);
-    const toolFunction = toolsDeciderMap.get(toolCall.function.name);
-    return toolFunction(args);
-  } catch (error) {
-    console.error('Error in agentDeciderAndRunner:', error)
-  }
-}
-
 async function renderableBe(req:Request, res:Response) {
   const prompt : Message[] = req.body.messages;
   if (!req.is('application/json')) {
@@ -268,7 +289,7 @@ async function renderableBe(req:Request, res:Response) {
   if (!prompt) {
     return res.status(400).json({error: "Prompt is required"});
   }
-  const functionCallResponse = await openai.chat.completions.create({
+  const runner = await openai.beta.chat.completions.runTools({
     model: "gpt-4o",
     messages: [{
       role: "system",
@@ -276,8 +297,8 @@ async function renderableBe(req:Request, res:Response) {
   }, ...prompt],
     tools: tools,
   });
-  const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse))
-  return res.status(200).json(messageResponse);
+  const finalContent : Message = JSON.parse(await runner.finalFunctionCallResult());
+  return res.status(200).json(finalContent);
 }
 
 async function generateComponent(req:Request, res:Response) {
