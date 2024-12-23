@@ -64,7 +64,6 @@ const chatTool = (0, zod_1.zodFunction)({
             content: zod_2.z.string().describe("The content of the chat message"),
         }))
     }),
-    function: chatAgent,
 });
 const golfPlayerTool = (0, zod_1.zodFunction)({
     name: "golfPlayerAgent",
@@ -75,7 +74,6 @@ const golfPlayerTool = (0, zod_1.zodFunction)({
             .optional()
             .describe("The year to get information about the golf player. If not specified, leave empty."),
     }),
-    function: golfPlayerAgent,
 });
 const golfTournamentTool = (0, zod_1.zodFunction)({
     name: "golfTournamentAgent",
@@ -84,7 +82,6 @@ const golfTournamentTool = (0, zod_1.zodFunction)({
         tournament: zod_2.z.string().describe("The name of the golf tournament to get information on."),
         year: zod_2.z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
     }),
-    function: golfTournamentAgent
 });
 let tools = [chatTool, golfPlayerTool, golfTournamentTool];
 const app = (0, express_1.default)();
@@ -281,6 +278,26 @@ function chatAgent(args) {
 //   }
 //   return response
 // }
+function agentDeciderAndRunner(responseString) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = JSON.parse(responseString);
+        const toolCall = response.choices[0].message.tool_calls[0];
+        const functionName = toolCall.function.name;
+        const args = JSON.parse(toolCall.function.arguments);
+        switch (functionName) {
+            case "chatAgent":
+                return chatAgent(args);
+            // case "personAgent":
+            //   return personAgent(args.person);
+            // case "monitoringGraphAgent":
+            //   return monitoringGraphAgent(args.handlerName);
+            case "golfPlayerAgent":
+                return golfPlayerAgent(args);
+            case "golfTournamentAgent":
+                return golfTournamentAgent(args);
+        }
+    });
+}
 function renderableBe(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const prompt = req.body.messages;
@@ -290,16 +307,18 @@ function renderableBe(req, res) {
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
-        const runner = yield openai.beta.chat.completions.runTools({
+        const toolGraphJson = yield redisClient_1.redisClient.get('toolGraph');
+        const toolGraph = JSON.parse(toolGraphJson);
+        const functionCallResponse = yield openai.chat.completions.create({
             model: "gpt-4o",
             messages: [{
                     role: "system",
                     content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
                 }, ...prompt],
-            tools: tools,
+            tools: toolGraph,
         });
-        const finalContent = JSON.parse(yield runner.finalFunctionCallResult());
-        return res.status(200).json(finalContent);
+        const messageResponse = yield agentDeciderAndRunner(JSON.stringify(functionCallResponse));
+        return res.status(200).json(messageResponse);
     });
 }
 function generateComponent(req, res) {
@@ -313,7 +332,7 @@ function generateComponent(req, res) {
         }
         const generateComponentPromise = (0, renderableFeUtils_1.generateComponentFile)(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
         const toolGraphJson = yield redisClient_1.redisClient.get('toolGraph');
-        const generateToolNodePromise = (0, renderableFeUtils_1.generateToolNode)(prompt.agentName, prompt.agentDescription, yield redisClient_1.redisClient.get('toolGraph'));
+        const generateToolNodePromise = (0, renderableFeUtils_1.generateToolNode)(prompt.agentName, prompt.agentDescription, prompt.agentArgs);
         const [_, toolNode] = yield Promise.all([generateComponentPromise, generateToolNodePromise]);
         const toolGraph = JSON.parse(toolGraphJson);
         toolGraph.push(toolNode);

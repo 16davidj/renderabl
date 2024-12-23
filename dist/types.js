@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChatCompletionToolSchema = exports.GolfTournamentCardStructure = exports.GolfPlayerCardStructure = exports.PersonCardStructure = void 0;
+exports.ParameterSchema = exports.GolfTournamentCardStructure = exports.GolfPlayerCardStructure = exports.PersonCardStructure = void 0;
 const zod_1 = require("zod");
 exports.PersonCardStructure = zod_1.z.object({
     name: zod_1.z.string(),
@@ -47,33 +47,15 @@ exports.GolfTournamentCardStructure = zod_1.z.object({
     players: zod_1.z.array(PlayerScore).describe("The top 10 players from the tournament."),
     year: zod_1.z.number(),
 });
-// Define base parameter types
-const baseType = zod_1.z.union([
-    zod_1.z.literal("string"),
-    zod_1.z.literal("number"),
-    zod_1.z.literal("boolean"),
-    zod_1.z.literal("array"),
-    zod_1.z.literal("object"),
-]);
-const functionSchema = zod_1.z.object({
-    name: zod_1.z.string(),
-    description: zod_1.z.string(),
-    parameters: zod_1.z.object({
-        type: zod_1.z.literal("object"),
-        properties: zod_1.z.record(zod_1.z.string(), zod_1.z.object({
-            type: zod_1.z.union([
-                zod_1.z.literal("string"),
-                zod_1.z.literal("number"),
-                zod_1.z.literal("boolean"),
-                zod_1.z.literal("array"),
-            ]),
-            description: zod_1.z.string().optional(),
-        })),
-        required: zod_1.z.array(zod_1.z.string()),
-    }),
-});
-exports.ChatCompletionToolSchema = zod_1.z.object({
-    type: zod_1.z.literal("function"),
-    function: functionSchema
+exports.ParameterSchema = zod_1.z.object({
+    parameters: zod_1.z.record(zod_1.z.string(), zod_1.z.object({
+        type: zod_1.z.union([
+            zod_1.z.literal("string"),
+            zod_1.z.literal("number"),
+            zod_1.z.literal("boolean"),
+            zod_1.z.literal("array"),
+            // z.literal("object"),
+        ]),
+    })),
 });
 //# sourceMappingURL=types.js.map

@@ -56,7 +56,6 @@ const chatTool : AutoParseableTool<any, any> = zodFunction({
       })
     )
   }), 
-  function: chatAgent,
 })
 
 const golfPlayerTool : AutoParseableTool<any, any> = zodFunction({
@@ -68,7 +67,6 @@ const golfPlayerTool : AutoParseableTool<any, any> = zodFunction({
       .optional()
       .describe("The year to get information about the golf player. If not specified, leave empty."),
   }),
-  function: golfPlayerAgent,
 })
 
 const golfTournamentTool : AutoParseableTool<any, any> = zodFunction({
@@ -78,7 +76,6 @@ const golfTournamentTool : AutoParseableTool<any, any> = zodFunction({
     tournament: z.string().describe("The name of the golf tournament to get information on."),
     year: z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
   }),
-  function: golfTournamentAgent
 });
 let tools: AutoParseableTool<any, any>[] = [chatTool, golfPlayerTool, golfTournamentTool];
 
@@ -281,6 +278,25 @@ async function chatAgent(args) : Promise<Message> {
 //   return response
 // }
 
+async function agentDeciderAndRunner(responseString : string) : Promise<Message> {
+  const response = JSON.parse(responseString);
+  const toolCall = response.choices[0].message.tool_calls[0];
+  const functionName = toolCall.function.name;
+  const args = JSON.parse(toolCall.function.arguments);
+  switch (functionName) {
+    case "chatAgent":
+      return chatAgent(args);
+    // case "personAgent":
+    //   return personAgent(args.person);
+    // case "monitoringGraphAgent":
+    //   return monitoringGraphAgent(args.handlerName);
+    case "golfPlayerAgent":
+      return golfPlayerAgent(args); 
+    case "golfTournamentAgent":
+      return golfTournamentAgent(args);
+  } 
+}
+
 async function renderableBe(req:Request, res:Response) {
   const prompt : Message[] = req.body.messages;
   if (!req.is('application/json')) {
@@ -289,16 +305,18 @@ async function renderableBe(req:Request, res:Response) {
   if (!prompt) {
     return res.status(400).json({error: "Prompt is required"});
   }
-  const runner = await openai.beta.chat.completions.runTools({
+  const toolGraphJson = await redisClient.get('toolGraph');
+  const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
+  const functionCallResponse = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [{
       role: "system",
       content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
   }, ...prompt],
-    tools: tools,
+    tools: toolGraph,
   });
-  const finalContent : Message = JSON.parse(await runner.finalFunctionCallResult());
-  return res.status(200).json(finalContent);
+  const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse))
+  return res.status(200).json(messageResponse);
 }
 
 async function generateComponent(req:Request, res:Response) {
@@ -311,7 +329,7 @@ async function generateComponent(req:Request, res:Response) {
   }
   const generateComponentPromise = generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
   const toolGraphJson = await redisClient.get('toolGraph');
-  const generateToolNodePromise = generateToolNode(prompt.agentName, prompt.agentDescription, await redisClient.get('toolGraph'));
+  const generateToolNodePromise = generateToolNode(prompt.agentName, prompt.agentDescription, prompt.agentArgs);
   const [_, toolNode] = await Promise.all([generateComponentPromise, generateToolNodePromise]);
   const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
   toolGraph.push(toolNode);

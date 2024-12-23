@@ -1,6 +1,4 @@
 import {TrafficData} from '../types'
-import {OpenAI} from 'openai'
-
   
 const performanceMap: Map<string, TrafficData[]> = new Map();
 performanceMap.set("GetSampleHandler", [

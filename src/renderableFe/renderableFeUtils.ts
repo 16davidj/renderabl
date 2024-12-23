@@ -1,9 +1,13 @@
 import fs from 'fs';
 import dotenv from 'dotenv'
 import {OpenAI} from 'openai'
-import { Message, ChatCompletionToolSchema } from '../types';
+import { Message, ParameterSchema } from '../types';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { zodResponseFormat } from "openai/helpers/zod";
+import {
+  makeParseableTool,
+  AutoParseableTool
+} from 'openai/lib/parser';
 
 dotenv.config();
 
@@ -22,11 +26,11 @@ export const concatenateComponentFiles = (fileDirectories : string[], directoryP
   return concatenatedContent;
 };
 
-// agentProps should be a json representation of the struct.
+// agentArgs should be a json schema of the struct.
 export const generateComponentFile = async (directoryPath: string, agentName : string, agentProps : string, agentDescription : string, outputPath : string) : Promise<void> => {
     const fileDirectories : string[] = fs.readdirSync(directoryPath);
     const prevComponentContent = concatenateComponentFiles(fileDirectories, directoryPath);
-    const prompt : ChatCompletionMessageParam = {role: "user", content: `The agent name is ${agentName}, with the following properties: ${agentProps}. If the following properties are empty, please generate properties that you believe are appropriate to show in this context. 
+    const prompt : ChatCompletionMessageParam = {role: "user", content: `The agent name is ${agentName}. Name and create the component's props after the following provided schema: ${agentProps}.
     This is the agent description: ${agentDescription}. This is a concatenated string of existing components: ${prevComponentContent}.`}
     const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
     const response = await openai.chat.completions.create({
@@ -36,7 +40,8 @@ export const generateComponentFile = async (directoryPath: string, agentName : s
             content: "You are a tool that helps generate UI components. You will be given the agentName, which will help with general naming, as well as the properties that will be passed in as props to the component, which should define" + 
             "the component and its UI properties. The agent description will describe the purpose of the UI component, and to what prompts it should be a response to." +
             "Lastly, a concatenatedContent string will provide a string with logic of similar components, off which this generated component should be based off of (eg. matching styling, language). Please generate the requested component. Please do not include any text besides the actual component itself." +
-            "For example, the response content should not include ``` to format the test, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported."
+            "DO NOT start or end, or include ``` to format the component, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported." +
+            "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from."
         }, prompt],
     })
     const content = response.choices[0].message.content;
@@ -83,21 +88,29 @@ export const mutateComponentFile = async (fileLocation : string, agentName : str
   return;
 }
 
-export const generateToolNode = async (agentName : string, agentDescription : string, existingToolsJson : string) : Promise<OpenAI.ChatCompletionTool> => {
-  const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
-  const description = `The agent name is ${agentName}. The description of the agent is: ${agentDescription}.`;
-  const userPrompt : Message = { role: "user", content: description }
-  const responseFormat = zodResponseFormat(ChatCompletionToolSchema, "tool_struct");
-  console.log(responseFormat.json_schema)
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [{
-        role: "system",
-        content: `You are a helpful assistant that generates a tools array, which helps decide which function to call when using function calling. The existing tools are defined as: ${existingToolsJson}.`
-    }, userPrompt],
-    //response_format: zodInfer<Parameters extends ZodType>,
-  })
-  const content : OpenAI.ChatCompletionTool = JSON.parse(response.choices[0].message.content);
-  console.log(content)
-  return content;
+export const generateToolNode = async (agentName : string, agentDescription : string, agentArgs : Record<string, unknown>) : Promise<OpenAI.ChatCompletionTool> => {
+  let parameters : any;
+  try {
+    parameters = agentArgs;
+  } catch (error) {
+    console.error("agentArgs is not a valid JSON string: ", error);
+    return;
+  }
+  let tool : AutoParseableTool<any, any> = makeParseableTool<any>(
+    {
+      type: 'function',
+      function: {
+        name: agentName,
+        parameters: parameters,
+        strict: true,
+        ...({ description: agentDescription }),
+      },
+    },
+    {
+      callback: undefined,
+      parser: undefined
+    }
+  );
+  console.log("Newly created tool: ", JSON.stringify(tool));
+  return tool;
 }

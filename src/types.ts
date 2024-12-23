@@ -54,39 +54,20 @@ export const GolfTournamentCardStructure = z.object({
   year: z.number(),
 })
 
-// Define base parameter types
-const baseType = z.union([
-  z.literal("string"),
-  z.literal("number"),
-  z.literal("boolean"),
-  z.literal("array"),
-  z.literal("object"),
-]);
 
-const functionSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  parameters: z.object({
-    type: z.literal("object"),
-    properties: z.record(
-      z.string(),
-      z.object({
-        type: z.union([
-          z.literal("string"),
-          z.literal("number"),
-          z.literal("boolean"),
-          z.literal("array"),
-        ]),
-        description: z.string().optional(),
-      })
-    ),
-    required: z.array(z.string()),
-  }),
-});
-
-export const ChatCompletionToolSchema = z.object({
-  type: z.literal("function"),
-  function: functionSchema
+export const ParameterSchema = z.object({
+  parameters: z.record(
+    z.string(),
+    z.object({
+      type: z.union([
+        z.literal("string"),
+        z.literal("number"),
+        z.literal("boolean"),
+        z.literal("array"),
+        // z.literal("object"),
+      ]),
+    })
+  ),
 });
 
 export interface TrafficData {
