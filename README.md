@@ -1,12 +1,18 @@
 # renderabl
 prototype
 
-# Build frontend
-Command + Shift + b to rebuild .ts to .js files
+# Rebuild frontend after changes
+use the tsc --build command (Command + Shift + b with VSCode) to rebuild .ts to .js files
 npx webpack (from the root component), then start Live Server on HTML
 
-# Build backend
-Command + Shift + b to rebuild .ts to .js files
+# Rebuild frontend after changes
+use the tsc --build command (Command + Shift + b with VSCode) to rebuild .ts to .js files
+npx webpack
+
+# Start Redis server (before starting backend server)
+redis-server
+
+# Start backend server
 node ./dist/renderableBe/backend.js 
 
 # Run tailwind (whenever there is a styling change)
@@ -41,6 +47,3 @@ http://localhost:5500/api/mutateRenderabl, with a raw body of:
     "agentName": "GolfBallAgent",
     "mutation" : "Please add to the UI component so that it can display info about the golf ball's material on the inside (eg. urethane). The field should be a string."
 }
-
-# Start Redis server
-redis-server
