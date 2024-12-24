@@ -31,6 +31,19 @@ const concatenateComponentFiles = (fileDirectories, directoryPath) => {
     return concatenatedContent;
 };
 exports.concatenateComponentFiles = concatenateComponentFiles;
+// async function getComponentProps(filePath: string) {
+//   const fileContent = fs.readFileSync(filePath, "utf-8");
+//   // Extract the `export type GolfBallCardProps` definition
+//   const propsRegex = /export type (\w+Props) = ({[\s\S]*?});/;
+//   const match = fileContent.match(propsRegex);
+//   if (match) {
+//     const [, name, props] = match;
+//     console.log(`Props Name: ${name}`);
+//     console.log(`Props Definition: ${props}`);
+//     return { name, props };
+//   }
+//   throw new Error("Props definition not found in the file.");
+// }
 // agentArgs should be a json schema of the struct.
 const generateComponentFile = (directoryPath, agentName, agentProps, agentDescription, outputPath) => __awaiter(void 0, void 0, void 0, function* () {
     const fileDirectories = fs_1.default.readdirSync(directoryPath);
@@ -46,20 +59,23 @@ const generateComponentFile = (directoryPath, agentName, agentProps, agentDescri
                     "the component and its UI properties. The agent description will describe the purpose of the UI component, and to what prompts it should be a response to." +
                     "Lastly, a concatenatedContent string will provide a string with logic of similar components, off which this generated component should be based off of (eg. matching styling, language). Please generate the requested component. Please do not include any text besides the actual component itself." +
                     "DO NOT start or end, or include ``` to format the component, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported." +
-                    "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from."
+                    "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from. The generated props in the component should match /export type (\w+Props) = ({[\s\S]*?});/ regex for further parsing."
             }, prompt],
     });
     const content = response.choices[0].message.content;
-    fs_1.default.writeFile(outputPath, content, (err) => {
+    fs_1.default.writeFile(outputPath, content, (err) => __awaiter(void 0, void 0, void 0, function* () {
         if (err) {
             console.error('Error writing to file:', err);
             return;
         }
         else {
             console.log('File written successfully!');
+            // const componentProps = getComponentProps(outputPath);
+            // const zodSchema = generateZodSchema((await componentProps).props);
+            // console.log("zodSchema", zodSchema);
             return;
         }
-    });
+    }));
     return;
 });
 exports.generateComponentFile = generateComponentFile;
