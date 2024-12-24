@@ -339,7 +339,7 @@ function generateComponent(req, res) {
         redisClient_1.redisClient.set('toolGraph', JSON.stringify(toolGraph));
         // TODO(davidjin): consider writing file content instead of output path
         redisClient_1.redisClient.set((0, redisUtils_1.createFileKey)(prompt.agentName), prompt.outputPath);
-        return res.status(200);
+        return res.status(200).json({ message: "File generated successfully" });
     });
 }
 function mutateComponent(req, res) {
@@ -356,7 +356,7 @@ function mutateComponent(req, res) {
             return res.status(400).json({ error: "File location not found" });
         }
         (0, renderableFeUtils_1.mutateComponentFile)(fileLocation, prompt.agentName, prompt.mutation);
-        return res.status(200);
+        return res.status(200).json({ message: "File mutated successfully" });
     });
 }
 app.listen(port, () => {

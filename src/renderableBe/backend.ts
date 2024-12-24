@@ -336,7 +336,7 @@ async function generateComponent(req:Request, res:Response) {
   redisClient.set('toolGraph', JSON.stringify(toolGraph));
   // TODO(davidjin): consider writing file content instead of output path
   redisClient.set(createFileKey(prompt.agentName), prompt.outputPath);
-  return res.status(200)
+  return res.status(200).json({ message: "File generated successfully" });
 }
 
 async function mutateComponent(req:Request, res:Response) {
@@ -352,7 +352,7 @@ async function mutateComponent(req:Request, res:Response) {
     return res.status(400).json({error: "File location not found"});
   }
   mutateComponentFile(fileLocation, prompt.agentName, prompt.mutation);
-  return res.status(200)
+  return res.status(200).json({ message: "File mutated successfully" });
 }
 
 app.listen(port, () => {

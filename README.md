@@ -36,8 +36,9 @@ I use Postman, and create a Post request to http://localhost:5500/api/generateRe
 {
     "directoryPath": "/Users/David/Desktop/renderabl/src/golfcards",
     "agentName": "GolfBallAgent",
-    "agentProps": "picture_url: string, name: string, summary:string, launch:string, spin: string, firmness:string, players_who_used:string[]",
-    "agentDescription": "A chat agent designed to show UI card components about various golf balls",
+    "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"name":{"type":"string"}}, "required":["name"], "additionalProperties": false},
+    "agentProps": "picture_url: string, name: string, summary:string, launch_characteristics:string, spin_characteristics: string, year_introduced:number, firmness:string, players_who_used:string[]",
+    "agentDescription": "A chat agent designed to show UI card components about various golf balls. Call whenever you need to respond to a prompt that asks about a golf ball. The input parameters should be the golf ball name",
     "outputPath": "/Users/David/Desktop/renderabl/src/golfcards/golfballcard.tsx"
 }
 
