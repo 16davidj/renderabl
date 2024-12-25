@@ -9,6 +9,11 @@ npx webpack (from the root component), then start Live Server on HTML
 use the tsc --build command (Command + Shift + b with VSCode) to rebuild .ts to .js files
 npx webpack
 
+# Build sampleApp (chat app that interacts with the Renderabl backend)
+live-server --port=5500
+
+Alternatively, I use the VSCode extension "Live Server" so that it's a click away.
+
 # Start Redis server (before starting backend server)
 redis-server
 

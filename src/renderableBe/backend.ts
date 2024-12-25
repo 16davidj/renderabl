@@ -376,7 +376,6 @@ async function generateAgent(req:Request, res:Response) {
   const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
   toolGraph.push(toolNode);
   redisClient.set('toolGraph', JSON.stringify(toolGraph));
-  // TODO(davidjin): consider writing file content instead of output path
   redisClient.set(createFileKey(prompt.agentName), prompt.outputPath);
   return res.status(200).json({ message: "File generated successfully" });
 }
