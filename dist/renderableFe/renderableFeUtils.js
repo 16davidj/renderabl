@@ -135,7 +135,7 @@ const generateToolNode = (agentName, agentDescription, agentArgs, contextDataJso
     console.log("agentDescription", agentDescription);
     let tool = (0, parser_1.makeParseableTool)({
         type: 'function',
-        function: Object.assign({ name: agentName, parameters: parameters, strict: true }, ({ description: description })),
+        function: Object.assign({ name: agentName, parameters: parameters, strict: false }, ({ description: description })),
     }, {
         callback: undefined,
         parser: undefined

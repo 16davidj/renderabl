@@ -140,7 +140,7 @@ export const generateToolNode = async (agentName : string, agentDescription : st
       function: {
         name: agentName,
         parameters: parameters,
-        strict: true,
+        strict: false,
         ...({ description: description }),
       },
     },

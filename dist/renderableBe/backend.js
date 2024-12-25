@@ -47,9 +47,7 @@ const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
             { key: 'toolGraph', value: JSON.stringify(tools) }
         ];
         for (const { key, value } of data) {
-            if (!redisClient_1.redisClient.exists(key)) {
-                yield redisClient_1.redisClient.set(key, value);
-            }
+            yield redisClient_1.redisClient.set(key, value);
         }
         console.log('Redis pre-warmed with initial data');
     }
@@ -249,7 +247,13 @@ function golfTournamentAgent(args) {
 }
 function chatAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
-        const prompt = args.messages;
+        let prompt;
+        if (args instanceof Array) {
+            prompt = args;
+        }
+        else {
+            prompt = args.messages;
+        }
         if (!prompt) {
             console.error("Prompt for chat agent is required");
             return;
@@ -286,11 +290,9 @@ function chatAgent(args) {
 function agentDeciderAndRunner(responseString, prompt) {
     return __awaiter(this, void 0, void 0, function* () {
         const response = JSON.parse(responseString);
-        let args;
         if (!response.choices[0].message.tool_calls) {
             // Default to chat agent if there are no valid function calls. 
-            args.messages = prompt;
-            return chatAgent(args);
+            return chatAgent(prompt);
         }
         else {
             const toolCall = response.choices[0].message.tool_calls[0];

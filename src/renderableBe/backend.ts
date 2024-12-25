@@ -37,9 +37,7 @@ const preWarmRedis = async () => {
     ];
 
     for (const { key, value } of data) {
-      if (!redisClient.exists(key)) {
-        await redisClient.set(key, value);
-      }
+      await redisClient.set(key, value);
     }
     console.log('Redis pre-warmed with initial data');
   } catch (error) {
@@ -248,8 +246,13 @@ export async function golfTournamentAgent(args): Promise<Message> {
     }
 }
 
-async function chatAgent(args) : Promise<Message> {
-  const prompt : Message[] = args.messages;
+async function chatAgent(args: { messages: Message[]; } | Message[]) : Promise<Message> {
+  let prompt : Message[];
+  if (args instanceof Array) {
+    prompt = args;
+  } else {
+    prompt = args.messages;
+  }
   if (!prompt) {
     console.error("Prompt for chat agent is required");
     return;
@@ -285,11 +288,9 @@ async function chatAgent(args) : Promise<Message> {
 
 async function agentDeciderAndRunner(responseString : string, prompt : Message[]) : Promise<Message> {
   const response = JSON.parse(responseString);
-  let args : any;
   if (!response.choices[0].message.tool_calls) {
     // Default to chat agent if there are no valid function calls. 
-    args.messages = prompt;
-    return chatAgent(args);
+    return chatAgent(prompt);
   } else {
     const toolCall = response.choices[0].message.tool_calls[0];
     const functionName = toolCall.function.name;
