@@ -109,14 +109,31 @@ export const mutateComponentFile = async (fileLocation : string, agentName : str
   return;
 }
 
-export const generateToolNode = async (agentName : string, agentDescription : string, agentArgs : Record<string, unknown>) : Promise<OpenAI.ChatCompletionTool> => {
-  let parameters : any;
+export const generateToolNode = async (agentName : string, agentDescription : string, agentArgs : Record<string, unknown>, contextDataJson : string) : Promise<OpenAI.ChatCompletionTool> => {
+  let parameters : any = agentArgs;
+  let contextData : Record<string, string[]>;
   try {
     parameters = agentArgs;
+    contextData = JSON.parse(contextDataJson);
   } catch (error) {
-    console.error("agentArgs is not a valid JSON string: ", error);
+    console.error("could not parse context data: ", error);
     return;
   }
+
+  let agentRelevantContext : Record<string, string[]>;
+  const agentProperties : Record<string, any> = agentArgs.properties;
+  try {
+    agentRelevantContext = Object.fromEntries(
+      Object.entries(contextData).filter(([key]) => key in agentProperties)
+    );
+  } catch (error) {
+    console.error("could not get agent relevant context from agent properties: ", error);
+  }
+
+  const description = agentDescription + "For context, the parameters specified for the function call can take in the following values:"
+   + JSON.stringify(agentRelevantContext) + ". You can also use these values as a signal that this function could be called.";
+
+  console.log("agentDescription", agentDescription); 
   let tool : AutoParseableTool<any, any> = makeParseableTool<any>(
     {
       type: 'function',
@@ -124,7 +141,7 @@ export const generateToolNode = async (agentName : string, agentDescription : st
         name: agentName,
         parameters: parameters,
         strict: true,
-        ...({ description: agentDescription }),
+        ...({ description: description }),
       },
     },
     {

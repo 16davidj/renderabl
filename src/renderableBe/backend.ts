@@ -37,7 +37,9 @@ const preWarmRedis = async () => {
     ];
 
     for (const { key, value } of data) {
-      await redisClient.set(key, value);
+      if (!redisClient.exists(key)) {
+        await redisClient.set(key, value);
+      }
     }
     console.log('Redis pre-warmed with initial data');
   } catch (error) {
@@ -121,8 +123,11 @@ app.get('/api/redis/:key', async (req, res) => {
 
 const router = express.Router();
 router.post('/api/renderabl', renderableBe as (req: Request, res: Response) => void);
-router.post('/api/generateRenderabl', generateComponent as (req: Request, res: Response) => void)
-router.post('/api/mutateRenderabl', mutateComponent as (req: Request, res: Response) => void)
+router.post('/api/generateRenderabl', generateAgent as (req: Request, res: Response) => void)
+router.post('/api/mutateRenderabl', mutateAgent as (req: Request, res: Response) => void)
+router.post('/api/provideContext', provideContext as (req: Request, res: Response) => void)
+router.get('/api/getContext', getContext as (req: Request, res: Response) => void)
+router.get('/api/getToolGraph', getToolGraph as (req: Request, res: Response) => void)
 
 app.use(router)
 
@@ -278,23 +283,31 @@ async function chatAgent(args) : Promise<Message> {
 //   return response
 // }
 
-async function agentDeciderAndRunner(responseString : string) : Promise<Message> {
+async function agentDeciderAndRunner(responseString : string, prompt : Message[]) : Promise<Message> {
   const response = JSON.parse(responseString);
-  const toolCall = response.choices[0].message.tool_calls[0];
-  const functionName = toolCall.function.name;
-  const args = JSON.parse(toolCall.function.arguments);
-  switch (functionName) {
-    case "chatAgent":
-      return chatAgent(args);
-    // case "personAgent":
-    //   return personAgent(args.person);
-    // case "monitoringGraphAgent":
-    //   return monitoringGraphAgent(args.handlerName);
-    case "golfPlayerAgent":
-      return golfPlayerAgent(args); 
-    case "golfTournamentAgent":
-      return golfTournamentAgent(args);
-  } 
+  let args : any;
+  if (!response.choices[0].message.tool_calls) {
+    // Default to chat agent if there are no valid function calls. 
+    args.messages = prompt;
+    return chatAgent(args);
+  } else {
+    const toolCall = response.choices[0].message.tool_calls[0];
+    const functionName = toolCall.function.name;
+    const args = JSON.parse(toolCall.function.arguments);
+    console.log("Function Name: " + functionName + " with arguments: " + JSON.stringify(args));
+    switch (functionName) {
+      case "chatAgent":
+        return chatAgent(args);
+      // case "personAgent":
+      //   return personAgent(args.person);
+      // case "monitoringGraphAgent":
+      //   return monitoringGraphAgent(args.handlerName);
+      case "golfPlayerAgent":
+        return golfPlayerAgent(args); 
+      case "golfTournamentAgent":
+        return golfTournamentAgent(args);
+    } 
+  }
 }
 
 async function renderableBe(req:Request, res:Response) {
@@ -311,15 +324,43 @@ async function renderableBe(req:Request, res:Response) {
     model: "gpt-4o",
     messages: [{
       role: "system",
-      content: "You are an agent that determines what function in the tools to call given the user prompt. You can use the entire messages array as context, but please only respond to the last message."
-  }, ...prompt],
+      content: `You are an agent that determines which function in the tools to call given the user's prompt. Use the entire conversation history for context, but prioritize the last user message for making your decision. If no other function is appropriate, default to calling the "chatAgent" function.`
+  }, prompt[prompt.length-1]],
+  //...prompt[prompt.length-1]],
     tools: toolGraph,
   });
-  const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse))
+  const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt)
   return res.status(200).json(messageResponse);
 }
 
-async function generateComponent(req:Request, res:Response) {
+async function provideContext(req:Request, res:Response) {
+  const prompt = req.body;
+  if (!req.is('application/json')) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
+  if (!prompt) {
+    return res.status(400).json({error: "Prompt is required"});
+  }
+  console.log(prompt);
+  const kvObject : Record<string, string[]> = prompt;
+  if (!kvObject) {
+    return res.status(400).json({error: "Valid kv-pair object is required"});
+  }
+  redisClient.set('contextData', JSON.stringify(prompt));
+  return res.status(200).json({ message: "Context provided successfully" });
+}
+
+async function getContext(req:Request, res:Response) {
+  const contextData = await redisClient.get('contextData');
+  return res.status(200).json(contextData);
+}
+
+async function getToolGraph(req:Request, res:Response) {
+  const toolGraph = await redisClient.get('toolGraph');
+  return res.status(200).json(toolGraph);
+}
+
+async function generateAgent(req:Request, res:Response) {
   const prompt = req.body;
   if (!req.is('application/json')) {
       return res.status(400).json({ error: 'Invalid request body' });
@@ -327,9 +368,9 @@ async function generateComponent(req:Request, res:Response) {
   if (!prompt) {
     return res.status(400).json({error: "Prompt is required"});
   }
-  const generateComponentPromise = generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
-  const toolGraphJson = await redisClient.get('toolGraph');
-  const generateToolNodePromise = generateToolNode(prompt.agentName, prompt.agentDescription, prompt.agentArgs);
+  const generateComponentPromise = generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription,prompt.outputPath);
+  const [toolGraphJson, contextDataJson] = await Promise.all([redisClient.get('toolGraph'), redisClient.get('contextData')]);redisClient.get('toolGraph');
+  const generateToolNodePromise = generateToolNode(prompt.agentName, prompt.agentDescription, prompt.agentArgs, contextDataJson);
   const [_, toolNode] = await Promise.all([generateComponentPromise, generateToolNodePromise]);
   const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
   toolGraph.push(toolNode);
@@ -339,7 +380,7 @@ async function generateComponent(req:Request, res:Response) {
   return res.status(200).json({ message: "File generated successfully" });
 }
 
-async function mutateComponent(req:Request, res:Response) {
+async function mutateAgent(req:Request, res:Response) {
   const prompt = req.body;
   if (!req.is('application/json')) {
       return res.status(400).json({ error: 'Invalid request body' });

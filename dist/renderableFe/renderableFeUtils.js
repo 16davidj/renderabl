@@ -111,18 +111,31 @@ const mutateComponentFile = (fileLocation, agentName, userPrompt) => __awaiter(v
     return;
 });
 exports.mutateComponentFile = mutateComponentFile;
-const generateToolNode = (agentName, agentDescription, agentArgs) => __awaiter(void 0, void 0, void 0, function* () {
-    let parameters;
+const generateToolNode = (agentName, agentDescription, agentArgs, contextDataJson) => __awaiter(void 0, void 0, void 0, function* () {
+    let parameters = agentArgs;
+    let contextData;
     try {
         parameters = agentArgs;
+        contextData = JSON.parse(contextDataJson);
     }
     catch (error) {
-        console.error("agentArgs is not a valid JSON string: ", error);
+        console.error("could not parse context data: ", error);
         return;
     }
+    let agentRelevantContext;
+    const agentProperties = agentArgs.properties;
+    try {
+        agentRelevantContext = Object.fromEntries(Object.entries(contextData).filter(([key]) => key in agentProperties));
+    }
+    catch (error) {
+        console.error("could not get agent relevant context from agent properties: ", error);
+    }
+    const description = agentDescription + "For context, the parameters specified for the function call can take in the following values:"
+        + JSON.stringify(agentRelevantContext) + ". You can also use these values as a signal that this function could be called.";
+    console.log("agentDescription", agentDescription);
     let tool = (0, parser_1.makeParseableTool)({
         type: 'function',
-        function: Object.assign({ name: agentName, parameters: parameters, strict: true }, ({ description: agentDescription })),
+        function: Object.assign({ name: agentName, parameters: parameters, strict: true }, ({ description: description })),
     }, {
         callback: undefined,
         parser: undefined
