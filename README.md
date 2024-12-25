@@ -42,9 +42,88 @@ I use Postman, and create a Post request to http://localhost:5500/api/generateRe
     "outputPath": "/Users/David/Desktop/renderabl/src/golfcards/golfballcard.tsx"
 }
 
+{
+    "directoryPath": "/Users/David/Desktop/renderabl/src/golfcards",
+    "agentName": "TraficAgent",
+    "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"handler":{"type":"string"}, "cell":{"type":"string"}}, "required":["handler"], "additionalProperties": false},
+    "agentProps": "traffic_qps: number[]",
+    "agentDescription": "An agent designed to show UI card components of monitoring traffic data of a specific endpoint. Call whenever you need to respond to a prompt that asks traffic data given some parameters",
+    "outputPath": "/Users/David/Desktop/renderabl/src/golfcards/trafficGraph.tsx"
+}
+
 # Example mutation request
 http://localhost:5500/api/mutateRenderabl, with a raw body of:
 {
     "agentName": "GolfBallAgent",
     "mutation" : "Please add to the UI component so that it can display info about the golf ball's material on the inside (eg. urethane). The field should be a string."
+}
+
+# Getters
+http://localhost:5500/api/getToolGraph
+http://localhost:5500/api/getContext
+
+# Providing context
+http://localhost:5500/api/provideContext
+
+{
+  "handler": [
+    "SampleEndpoint",
+    "GlobalEndpoint",
+    "FeatureEndpoint1",
+    "FeatureEndpoint2",
+    "FeatureEndpoint3",
+    "FeatureEndpoint4",
+    "FeatureEndpoint5",
+    "FeatureEndpoint6",
+    "FeatureEndpoint7",
+    "FeatureEndpoint8",
+    "FeatureEndpoint9",
+    "FeatureEndpoint10"
+  ],
+  "node": [
+    "global-config",
+    "sample-ui",
+    "sample-ui-extended",
+    "sample-touchstone",
+    "FeatureNode1",
+    "FeatureNode2",
+    "FeatureNode3",
+    "FeatureNode4",
+    "FeatureNode5",
+    "FeatureNode6",
+    "FeatureNode7",
+    "FeatureNode8",
+    "FeatureNode9",
+    "FeatureNode10"
+  ],
+  "cell": [
+    "qs",
+    "ax",
+    "az",
+    "bu",
+    "FeatureCell1",
+    "FeatureCell2",
+    "FeatureCell3",
+    "FeatureCell4",
+    "FeatureCell5",
+    "FeatureCell6",
+    "FeatureCell7",
+    "FeatureCell8",
+    "FeatureCell9",
+    "FeatureCell10"
+  ],
+  "component": [
+    "feature1",
+    "feature2",
+    "FeatureComponent1",
+    "FeatureComponent2",
+    "FeatureComponent3",
+    "FeatureComponent4",
+    "FeatureComponent5",
+    "FeatureComponent6",
+    "FeatureComponent7",
+    "FeatureComponent8",
+    "FeatureComponent9",
+    "FeatureComponent10"
+  ]
 }
