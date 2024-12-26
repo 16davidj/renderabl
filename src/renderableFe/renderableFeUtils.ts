@@ -45,24 +45,29 @@ export const concatenateComponentFiles = (fileDirectories : string[], directoryP
 // }
 
 // agentArgs should be a json schema of the struct.
+export const generateComponent = async (agentName : string, agentProps : string, agentDescription : string, similarComponents?: string) : Promise<string> => {
+  const prompt : ChatCompletionMessageParam = {role: "user", content: `The agent name is ${agentName}. Name and create the component's props after the following provided schema: ${agentProps}.
+  This is the agent description: ${agentDescription}. This is a concatenated string of existing components: ${similarComponents}.`}
+  const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
+  const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{
+          role: "system",
+          content: "You are a tool that helps generate UI components. You will be given the agentName, which will help with general naming, as well as the properties that will be passed in as props to the component, which should define" + 
+          "the component and its UI properties. The agent description will describe the purpose of the UI component, and to what prompts it should be a response to." +
+          "Lastly, a concatenatedContent string will provide a string with logic of similar components, off which this generated component should be based off of (eg. matching styling, language). Please generate the requested component. Please do not include any text besides the actual component itself." +
+          "DO NOT start or end, or include ``` to format the component, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported." +
+          "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from.."
+      }, prompt],
+  })
+  return response.choices[0].message.content;
+}
+
+// agentArgs should be a json schema of the struct.
 export const generateComponentFile = async (directoryPath: string, agentName : string, agentProps : string, agentDescription : string, outputPath : string) : Promise<void> => {
-    const fileDirectories : string[] = fs.readdirSync(directoryPath);
-    const prevComponentContent = concatenateComponentFiles(fileDirectories, directoryPath);
-    const prompt : ChatCompletionMessageParam = {role: "user", content: `The agent name is ${agentName}. Name and create the component's props after the following provided schema: ${agentProps}.
-    This is the agent description: ${agentDescription}. This is a concatenated string of existing components: ${prevComponentContent}.`}
-    const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
-    const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{
-            role: "system",
-            content: "You are a tool that helps generate UI components. You will be given the agentName, which will help with general naming, as well as the properties that will be passed in as props to the component, which should define" + 
-            "the component and its UI properties. The agent description will describe the purpose of the UI component, and to what prompts it should be a response to." +
-            "Lastly, a concatenatedContent string will provide a string with logic of similar components, off which this generated component should be based off of (eg. matching styling, language). Please generate the requested component. Please do not include any text besides the actual component itself." +
-            "DO NOT start or end, or include ``` to format the component, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported." +
-            "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from. The generated props in the component should match /export type (\w+Props) = ({[\s\S]*?});/ regex for further parsing."
-        }, prompt],
-    })
-    const content = response.choices[0].message.content;
+  const fileDirectories : string[] = fs.readdirSync(directoryPath);
+  const similarComponents = concatenateComponentFiles(fileDirectories, directoryPath);  
+  const content : string = await generateComponent(agentName, agentProps, agentDescription, similarComponents);
     fs.writeFile(outputPath, content, async (err) => {
         if (err) {
             console.error('Error writing to file:', err);

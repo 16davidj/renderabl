@@ -7,7 +7,7 @@ import { PersonCardProps } from '../generalcards/personcard';
 import { zodResponseFormat, zodFunction } from "openai/helpers/zod";
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { generateComponentFile, generateToolNode, mutateComponentFile } from '../renderableFe/renderableFeUtils';
+import { generateComponentFile, generateToolNode, mutateComponentFile, generateComponent } from '../renderableFe/renderableFeUtils';
 import { connectRedis, redisClient } from '../redis/redisClient';
 import { createFileKey, createSponsorLogoKey, createTourLogoKey } from '../redis/redisUtils';
 import { ZodType, z } from "zod";
@@ -126,7 +126,9 @@ router.post('/api/mutateRenderabl', mutateAgent as (req: Request, res: Response)
 router.post('/api/provideContext', provideContext as (req: Request, res: Response) => void)
 router.get('/api/getContext', getContext as (req: Request, res: Response) => void)
 router.get('/api/getToolGraph', getToolGraph as (req: Request, res: Response) => void)
-
+router.post('/api/getFunctionCallDecision', getFunctionCallDecision as (req: Request, res: Response) => void)
+router.post('/api/writeToolNode', writeToolNodeEndpoint as (req: Request, res: Response) => void)
+router.post('/api/generateComponent', generateComponentEndpoint as (req: Request, res: Response) => void)
 app.use(router)
 
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -334,6 +336,68 @@ async function renderableBe(req:Request, res:Response) {
   return res.status(200).json(messageResponse);
 }
 
+async function generateComponentEndpoint(req: Request, res: Response) {
+  const body = req.body;
+  if (!req.is('application/json')) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
+  if (!body) {
+    return res.status(400).json({error: "Prompt is required"});
+  }
+  const component : string = await generateComponent(body.agentName, body.agentProps, body.agentDescription, body.similarComponents);
+  return res.status(200).json(component);
+}
+
+async function writeToolNodeEndpoint(req: Request, res: Response) {
+  const body = req.body;
+  if (!req.is('application/json')) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
+  if (!body) {
+    return res.status(400).json({error: "Prompt is required"});
+  }
+  const contextDataJson = await redisClient.get('contextData')
+  const toolNode : OpenAI.ChatCompletionTool = await generateToolNode(body.agentName, body.agentDescription, body.agentArgs, contextDataJson);
+  const toolGraphJson = await redisClient.get('toolGraph');
+  const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
+  toolGraph.push(toolNode);
+  redisClient.set('toolGraph', JSON.stringify(toolGraph));
+  return res.status(200).json(toolNode);
+}
+
+async function getFunctionCallDecision(req:Request, res:Response) {
+  const body = req.body;
+  if (!req.is('application/json')) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
+  if (!body) {
+    return res.status(400).json({error: "Prompt is required"});
+  }
+  const toolGraphJson = await redisClient.get('toolGraph');
+  const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
+  const prompt : Message = {
+    role: "user",
+    content: body.prompt
+  }; 
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{
+      role: "system",
+      content: `You are an agent that determines which function in the tools to call given the user's prompt. Use the entire conversation history for context, but prioritize the last user message for making your decision. If no other function is appropriate, default to calling the "chatAgent" function.`
+  }, prompt],
+    tools: toolGraph,
+  });
+  if (!response.choices[0].message.tool_calls) {
+    // Default to chat agent if there are no valid function calls. 
+    return res.status(200).json({ message: "No valid function calls found" });
+  } else {
+    const toolCall = response.choices[0].message.tool_calls[0];
+    const functionName = toolCall.function.name;
+    const args = JSON.parse(toolCall.function.arguments);
+    return res.status(200).json({ message: "Function Name: " + functionName + " with arguments: " + JSON.stringify(args) });
+  }
+}
+
 async function provideContext(req:Request, res:Response) {
   const prompt = req.body;
   if (!req.is('application/json')) {
@@ -370,7 +434,7 @@ async function generateAgent(req:Request, res:Response) {
     return res.status(400).json({error: "Prompt is required"});
   }
   const generateComponentPromise = generateComponentFile(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription,prompt.outputPath);
-  const [toolGraphJson, contextDataJson] = await Promise.all([redisClient.get('toolGraph'), redisClient.get('contextData')]);redisClient.get('toolGraph');
+  const [toolGraphJson, contextDataJson] = await Promise.all([redisClient.get('toolGraph'), redisClient.get('contextData')]);
   const generateToolNodePromise = generateToolNode(prompt.agentName, prompt.agentDescription, prompt.agentArgs, contextDataJson);
   const [_, toolNode] = await Promise.all([generateComponentPromise, generateToolNodePromise]);
   const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
@@ -381,18 +445,18 @@ async function generateAgent(req:Request, res:Response) {
 }
 
 async function mutateAgent(req:Request, res:Response) {
-  const prompt = req.body;
+  const body = req.body;
   if (!req.is('application/json')) {
       return res.status(400).json({ error: 'Invalid request body' });
   }
   if (!prompt) {
     return res.status(400).json({error: "Prompt is required"});
   }
-  const fileLocation = await redisClient.get(createFileKey(prompt.agentName));
+  const fileLocation = await redisClient.get(createFileKey(body.agentName));
   if (!fileLocation) {
     return res.status(400).json({error: "File location not found"});
   }
-  mutateComponentFile(fileLocation, prompt.agentName, prompt.mutation);
+  mutateComponentFile(fileLocation, body.agentName, body.mutation);
   return res.status(200).json({ message: "File mutated successfully" });
 }
 

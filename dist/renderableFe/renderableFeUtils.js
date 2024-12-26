@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateToolNode = exports.mutateComponentFile = exports.generateComponentFile = exports.concatenateComponentFiles = void 0;
+exports.generateToolNode = exports.mutateComponentFile = exports.generateComponentFile = exports.generateComponent = exports.concatenateComponentFiles = void 0;
 const fs_1 = __importDefault(require("fs"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const openai_1 = require("openai");
@@ -45,11 +45,9 @@ exports.concatenateComponentFiles = concatenateComponentFiles;
 //   throw new Error("Props definition not found in the file.");
 // }
 // agentArgs should be a json schema of the struct.
-const generateComponentFile = (directoryPath, agentName, agentProps, agentDescription, outputPath) => __awaiter(void 0, void 0, void 0, function* () {
-    const fileDirectories = fs_1.default.readdirSync(directoryPath);
-    const prevComponentContent = (0, exports.concatenateComponentFiles)(fileDirectories, directoryPath);
+const generateComponent = (agentName, agentProps, agentDescription, similarComponents) => __awaiter(void 0, void 0, void 0, function* () {
     const prompt = { role: "user", content: `The agent name is ${agentName}. Name and create the component's props after the following provided schema: ${agentProps}.
-    This is the agent description: ${agentDescription}. This is a concatenated string of existing components: ${prevComponentContent}.` };
+  This is the agent description: ${agentDescription}. This is a concatenated string of existing components: ${similarComponents}.` };
     const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const response = yield openai.chat.completions.create({
         model: "gpt-4o",
@@ -59,10 +57,17 @@ const generateComponentFile = (directoryPath, agentName, agentProps, agentDescri
                     "the component and its UI properties. The agent description will describe the purpose of the UI component, and to what prompts it should be a response to." +
                     "Lastly, a concatenatedContent string will provide a string with logic of similar components, off which this generated component should be based off of (eg. matching styling, language). Please generate the requested component. Please do not include any text besides the actual component itself." +
                     "DO NOT start or end, or include ``` to format the component, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported." +
-                    "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from. The generated props in the component should match /export type (\w+Props) = ({[\s\S]*?});/ regex for further parsing."
+                    "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from.."
             }, prompt],
     });
-    const content = response.choices[0].message.content;
+    return response.choices[0].message.content;
+});
+exports.generateComponent = generateComponent;
+// agentArgs should be a json schema of the struct.
+const generateComponentFile = (directoryPath, agentName, agentProps, agentDescription, outputPath) => __awaiter(void 0, void 0, void 0, function* () {
+    const fileDirectories = fs_1.default.readdirSync(directoryPath);
+    const similarComponents = (0, exports.concatenateComponentFiles)(fileDirectories, directoryPath);
+    const content = yield (0, exports.generateComponent)(agentName, agentProps, agentDescription, similarComponents);
     fs_1.default.writeFile(outputPath, content, (err) => __awaiter(void 0, void 0, void 0, function* () {
         if (err) {
             console.error('Error writing to file:', err);
