@@ -15,10 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const jsx_runtime_1 = require("react/jsx-runtime");
 require("./output.css");
 const react_1 = require("react");
-const personcard_1 = __importDefault(require("../generalcards/personcard"));
-const monitorgraph_1 = __importDefault(require("../generalcards/monitorgraph"));
-const golfplayercard_1 = __importDefault(require("../golfcards/golfplayercard"));
-const golftournamentcard_1 = __importDefault(require("../golfcards/golftournamentcard"));
+const personcard_1 = __importDefault(require("./generalcards/personcard"));
+const monitorgraph_1 = __importDefault(require("./generalcards/monitorgraph"));
+const golfplayercard_1 = __importDefault(require("./golfcards/golfplayercard"));
+const golftournamentcard_1 = __importDefault(require("./golfcards/golftournamentcard"));
 function App() {
     const [formValue, setFormValue] = (0, react_1.useState)('');
     const [messages, setMessages] = (0, react_1.useState)([]);

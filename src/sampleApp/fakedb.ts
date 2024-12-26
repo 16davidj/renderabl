@@ -1,4 +1,4 @@
-import {TrafficData} from '../types'
+import {TrafficData} from './types'
   
 const performanceMap: Map<string, TrafficData[]> = new Map();
 performanceMap.set("GetSampleHandler", [

@@ -1,10 +1,10 @@
 import './output.css'
 import React, {useState} from 'react'
-import {Message} from '../types'
-import PersonCard from "../generalcards/personcard";
-import MonitoringGraph from '../generalcards/monitorgraph';
-import GolfPlayerCard from '../golfcards/golfplayercard';
-import GolfTournamentCard from '../golfcards/golftournamentcard';
+import {Message} from './types'
+import PersonCard from "./generalcards/personcard";
+import MonitoringGraph from './generalcards/monitorgraph';
+import GolfPlayerCard from './golfcards/golfplayercard';
+import GolfTournamentCard from './golfcards/golftournamentcard';
 
 function App() {
     const [formValue, setFormValue] = useState('')

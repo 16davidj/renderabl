@@ -1,7 +1,7 @@
 import fs from 'fs';
 import dotenv from 'dotenv'
 import {OpenAI} from 'openai'
-import { Message, ParameterSchema } from '../types';
+import { ParameterSchema } from '../types';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { zodResponseFormat } from "openai/helpers/zod";
 import {
