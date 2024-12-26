@@ -145,6 +145,9 @@ export const generateToolNode = async (agentName : string, agentDescription : st
       function: {
         name: agentName,
         parameters: parameters,
+        // TODO: consider changing strict to true. This would require the client to
+        // add all property keys to the required field, we would just have to allow null
+        // as a value. see Open AI DevDay 2024 | Structured Outputs for reliable applications, 37:00 mark.
         strict: false,
         ...({ description: description }),
       },
