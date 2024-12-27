@@ -1,0 +1,1 @@
+{"version":3,"file":"tailwind.config.js","sourceRoot":"","sources":["../../../../src/infraWebApp/dist/infraWebApp/tailwind.config.js"],"names":[],"mappings":"AAAA,2CAA2C;AAC3C,MAAM,CAAC,OAAO,GAAG;IACb,OAAO,EAAE;QACL,4BAA4B,EAAE,4CAA4C;KAC7E;IACD,KAAK,EAAE;QACH,MAAM,EAAE,EAAE;KACb;IACD,OAAO,EAAE,EAAE;CACd,CAAC;AACF,2CAA2C"}

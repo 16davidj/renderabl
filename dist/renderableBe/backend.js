@@ -30,6 +30,7 @@ app.use((_, res, next) => {
     res.header("Access-Control-Allow-Headers", "Content-Type");
     next();
 });
+app.options('*', (0, cors_1.default)());
 (0, redisClient_1.connectRedis)();
 // Endpoint to set a key-value pair, if the value is complex (use this for the decider graph).
 app.post('/api/redis', (req, res) => __awaiter(void 0, void 0, void 0, function* () {

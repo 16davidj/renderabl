@@ -12,6 +12,8 @@ import { createSponsorLogoKey, createTourLogoKey } from '../redis/redisUtils';
 import { ZodType, z } from "zod";
 import { AutoParseableTool } from 'openai/lib/parser';
 
+dotenv.config();
+
 const preWarmRedis = async () => {
 try {
     // Example: Preload some key-value pairs necessary to render logos.
@@ -77,7 +79,6 @@ parameters: z.object({
 });
 let tools: AutoParseableTool<any, any>[] = [chatTool, golfPlayerTool, golfTournamentTool];
 
-dotenv.config();
 const app = express();
 const port = process.env.REACT_APP_PORT;
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})

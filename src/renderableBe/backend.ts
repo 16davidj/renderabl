@@ -19,6 +19,7 @@ app.use((_, res, next) => {
     res.header("Access-Control-Allow-Headers", "Content-Type");
     next();
   });
+app.options('*', cors());
 
 connectRedis();
 
