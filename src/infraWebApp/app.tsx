@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Typography, Drawer, List, ListItemButton, ListItemText, AppBar, Toolbar, IconButton } from '@mui/material';
 
 import ContextTab from './components/contextTab';
+import ToolNodesPage from './components/toolNodesTab';
 
 const drawerWidth = 240;
 
@@ -33,7 +34,7 @@ export default function App() {
                         <ListItemText primary="Context Data" />
                     </ListItemButton>
                     <ListItemButton onClick={() => setSelectedTab(1)}>
-                        <ListItemText primary="Another Tab" />
+                        <ListItemText primary="Tool Decider" />
                     </ListItemButton>
                     {/* Add more tabs as needed */}
                 </List>
@@ -55,7 +56,7 @@ export default function App() {
                 {/* Display content based on selected tab */}
                 {selectedTab === 0 && <ContextTab />}
                 {selectedTab === 1 && (
-                    <Typography variant="h6">Content for Another Tab</Typography>
+                    <ToolNodesPage/>
                 )}
             </Box>
         </Box>

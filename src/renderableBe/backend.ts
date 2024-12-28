@@ -130,7 +130,6 @@ async function provideContext(req:Request, res:Response) {
   if (!prompt) {
     return res.status(400).json({error: "Prompt is required"});
   }
-  console.log(prompt);
   const kvObject : Record<string, string[]> = prompt;
   if (!kvObject) {
     return res.status(400).json({error: "Valid kv-pair object is required"});

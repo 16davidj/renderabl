@@ -78,12 +78,10 @@ export default function ContextTab() {
         });
     };
 
-
     const handleSubmit = () => {
         setLoading(true); // Set loading state to true when submitting
         setSuccessMessage(''); // Clear any previous success message
         setErrorMessage(''); // Clear any previous error message
-
         setDataMap(tempData);
 
         const plainObject = Object.fromEntries(tempData);
