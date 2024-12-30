@@ -57,7 +57,7 @@ const generateComponent = (agentName, agentProps, agentDescription, similarCompo
                     "the component and its UI properties. The agent description will describe the purpose of the UI component, and to what prompts it should be a response to." +
                     "Lastly, a concatenatedContent string will provide a string with logic of similar components, off which this generated component should be based off of (eg. matching styling, language). Please generate the requested component. Please do not include any text besides the actual component itself." +
                     "DO NOT start or end, or include ``` to format the component, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported." +
-                    "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from.."
+                    "Please export the component at the end."
             }, prompt],
     });
     return response.choices[0].message.content;

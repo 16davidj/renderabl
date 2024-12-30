@@ -142,7 +142,6 @@ function provideContext(req, res) {
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
-        console.log(prompt);
         const kvObject = prompt;
         if (!kvObject) {
             return res.status(400).json({ error: "Valid kv-pair object is required" });

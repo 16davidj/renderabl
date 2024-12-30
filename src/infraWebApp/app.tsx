@@ -3,12 +3,13 @@ import { Box, Typography, Drawer, List, ListItemButton, ListItemText, AppBar, To
 
 import ContextTab from './components/contextTab';
 import ToolNodesPage from './components/toolNodesTab';
+import ComponentGenerator from './components/componentGenTab';
 
 const drawerWidth = 240;
 
 export default function App() {
     const [selectedTab, setSelectedTab] = useState(0);
-    const [openDrawer, setOpenDrawer] = useState(false);  // For mobile or responsive drawer toggle
+    const [openDrawer, setOpenDrawer] = useState(false);  // For responsive drawer toggle
 
     const toggleDrawer = () => {
         setOpenDrawer(!openDrawer);
@@ -36,7 +37,9 @@ export default function App() {
                     <ListItemButton onClick={() => setSelectedTab(1)}>
                         <ListItemText primary="Tool Decider" />
                     </ListItemButton>
-                    {/* Add more tabs as needed */}
+                    <ListItemButton onClick={() => setSelectedTab(2)}>
+                        <ListItemText primary="Component Generator" />
+                    </ListItemButton>
                 </List>
             </Drawer>
 
@@ -58,6 +61,7 @@ export default function App() {
                 {selectedTab === 1 && (
                     <ToolNodesPage/>
                 )}
+                {selectedTab === 2 && (<ComponentGenerator/>)}
             </Box>
         </Box>
     );

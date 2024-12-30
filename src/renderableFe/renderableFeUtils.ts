@@ -1,14 +1,8 @@
 import fs from 'fs';
 import dotenv from 'dotenv'
 import {OpenAI} from 'openai'
-import { ParameterSchema } from '../types';
 import { ChatCompletionMessageParam } from 'openai/resources';
-import { zodResponseFormat } from "openai/helpers/zod";
-import {
-  makeParseableTool,
-  AutoParseableTool
-} from 'openai/lib/parser';
-import path from "path";
+import { makeParseableTool, AutoParseableTool } from 'openai/lib/parser';
 
 dotenv.config();
 
@@ -23,7 +17,6 @@ export const concatenateComponentFiles = (fileDirectories : string[], directoryP
       concatenatedContent += fileContent + '\n';
     }
   });
-
   return concatenatedContent;
 };
 
@@ -56,8 +49,8 @@ export const generateComponent = async (agentName : string, agentProps : string,
           content: "You are a tool that helps generate UI components. You will be given the agentName, which will help with general naming, as well as the properties that will be passed in as props to the component, which should define" + 
           "the component and its UI properties. The agent description will describe the purpose of the UI component, and to what prompts it should be a response to." +
           "Lastly, a concatenatedContent string will provide a string with logic of similar components, off which this generated component should be based off of (eg. matching styling, language). Please generate the requested component. Please do not include any text besides the actual component itself." +
-          "DO NOT start or end, or include ``` to format the component, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported." +
-          "Please include any import statements that may be necessary, and use the context of the other components to figure out where the components are imported from.."
+          "DO NOT start or end, or include ``` to format the component, or ```jsx to indicate the formatting of the language. The response content should be compile-able by itself, as it will be written straight to a file. The props should be included in the UI component, and should not be imported." + 
+          "Please export the component at the end."
       }, prompt],
   })
   return response.choices[0].message.content;

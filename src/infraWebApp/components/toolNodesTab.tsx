@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { Box, Button, TextField, Typography, Container } from '@mui/material';
 
