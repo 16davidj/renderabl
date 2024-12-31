@@ -12,7 +12,6 @@ window.React = React;
 
 const ComponentGenerator: React.FC = () => {
     const [jsonSchema, setJsonSchema] = useState(defaultSchema);
-
     const [generatedCode, setGeneratedCode] = useState("");
     const [renderOutput, setRenderOutput] = useState<React.ReactNode>(null);
 
@@ -29,7 +28,7 @@ const ComponentGenerator: React.FC = () => {
             if (response.ok) {
                 const data = await response.json();
                 setGeneratedCode(data);
-                console.log("generated code:", data);
+                console.log("Generated code:", data);
                 // Transpile JSX to plain JavaScript
                 // We need to use export default here instead of return because we
                 // would get componentGenTab.tsx:50 Error generating component: SyntaxError:
@@ -37,16 +36,12 @@ const ComponentGenerator: React.FC = () => {
                 const transpiledCode = Babel.transform(data, {
                     presets: ["react"],
                 }).code;
-                try {
-                    // If we don't replace "export default" with return, we get: Error rendering component: SyntaxError: Unexpected token 'export
-                    const Component = new Function(
-                        'React',
-                        `${transpiledCode.replace("export default", "return")}`
-                    )(React);
-                    setRenderOutput(<Component />);
-                } catch (error) {
-                    console.error("Error rendering component:", error);
-                }
+                // If we don't replace "export default" with return, we get: Error rendering component: SyntaxError: Unexpected token 'export
+                const Component = new Function(
+                    'React',
+                    `${transpiledCode.replace("export default", "return")}`
+                )(React);
+                setRenderOutput(<Component />);
             }
         } catch (error) {
             console.error("Error generating component:", error);

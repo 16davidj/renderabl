@@ -5,25 +5,18 @@ import ContextTab from './components/contextTab';
 import ToolNodesPage from './components/toolNodesTab';
 import ComponentGenerator from './components/componentGenTab';
 
-const drawerWidth = 240;
-
 export default function App() {
     const [selectedTab, setSelectedTab] = useState(0);
-    const [openDrawer, setOpenDrawer] = useState(false);  // For responsive drawer toggle
-
-    const toggleDrawer = () => {
-        setOpenDrawer(!openDrawer);
-    };
 
     return (
         <Box sx={{ display: 'flex' }}>
             {/* Sidebar (Drawer) */}
             <Drawer
                 sx={{
-                    width: drawerWidth,
+                    width: 240,
                     flexShrink: 0,
                     '& .MuiDrawer-paper': {
-                        width: drawerWidth,
+                        width: 240,
                         boxSizing: 'border-box',
                     },
                 }}
@@ -58,10 +51,8 @@ export default function App() {
 
                 {/* Display content based on selected tab */}
                 {selectedTab === 0 && <ContextTab />}
-                {selectedTab === 1 && (
-                    <ToolNodesPage/>
-                )}
-                {selectedTab === 2 && (<ComponentGenerator/>)}
+                {selectedTab === 1 && <ToolNodesPage/>}
+                {selectedTab === 2 && <ComponentGenerator/>}
             </Box>
         </Box>
     );

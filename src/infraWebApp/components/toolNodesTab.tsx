@@ -8,10 +8,10 @@ const defaultSchema = `{
 }`
 
 export default function ToolNodesPage() {
-    const [toolNodes, setToolNodes] = useState([]); // Array of tool nodes
-    const [newNodeSchema, setNewNodeSchema] = useState(defaultSchema); // JSON Schema input
-    const [prompt, setPrompt] = useState(''); // User's prompt input
-    const [decision, setDecision] = useState(null); // Decision JSON
+    const [toolNodes, setToolNodes] = useState([]);
+    const [newNodeSchema, setNewNodeSchema] = useState(defaultSchema);
+    const [prompt, setPrompt] = useState('');
+    const [decision, setDecision] = useState(null);
 
     // Fetch existing tool nodes on page load
     useEffect(() => {
@@ -23,19 +23,18 @@ export default function ToolNodesPage() {
 
     const handleAddNode = () => {
         try {
-            const schema = JSON.parse(newNodeSchema);
-
+            console.log(newNodeSchema)
             fetch('http://localhost:5500/api/writeToolNode', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(schema),
+                body: JSON.stringify(newNodeSchema),
             })
-                .then((res) => res.json())
-                .then((data) => {
-                    setToolNodes((prev) => [...prev, data]); // Add new node to the shelf
-                    setNewNodeSchema(defaultSchema); // Reset input field
-                })
-                .catch((err) => console.error('Error adding tool node:', err));
+            .then((res) => res.json())
+            .then((data) => {
+                setToolNodes((prev) => [...prev, data]); // Add new node to the shelf
+                setNewNodeSchema(defaultSchema); // Reset input field
+            })
+            .catch((err) => console.error('Error adding tool node:', err));
         } catch (error) {
             console.error('Invalid JSON Schema:', error);
         }
@@ -47,9 +46,9 @@ export default function ToolNodesPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: prompt }),
         })
-            .then((res) => res.json())
-            .then((data) => setDecision(data))
-            .catch((err) => console.error('Error sending prompt:', err));
+        .then((res) => res.json())
+        .then((data) => setDecision(data))
+        .catch((err) => console.error('Error sending prompt:', err));
     };
 
     return (

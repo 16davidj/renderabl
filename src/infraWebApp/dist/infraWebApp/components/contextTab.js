@@ -38,9 +38,10 @@ function getContextData() {
 function ContextTab() {
     const [dataMap, setDataMap] = (0, react_1.useState)(new Map());
     const [tempData, setTempData] = (0, react_1.useState)(new Map());
-    const [loading, setLoading] = (0, react_1.useState)(false); // State for loading
-    const [successMessage, setSuccessMessage] = (0, react_1.useState)(''); // State for success message
-    const [errorMessage, setErrorMessage] = (0, react_1.useState)(''); // State for error message
+    const [loading, setLoading] = (0, react_1.useState)(false); // State for loading spinner
+    const [successMessage, setSuccessMessage] = (0, react_1.useState)('');
+    const [errorMessage, setErrorMessage] = (0, react_1.useState)('');
+    // Fetch existing context data on page load.
     (0, react_1.useEffect)(() => {
         const fetchData = () => __awaiter(this, void 0, void 0, function* () {
             try {
@@ -83,7 +84,7 @@ function ContextTab() {
     const deleteKvPair = (key) => {
         setTempData((prevMap) => {
             const newMap = new Map(prevMap);
-            newMap.delete(key); // Remove the key-value pair by its key
+            newMap.delete(key);
             return newMap;
         });
     };
@@ -100,7 +101,7 @@ function ContextTab() {
         })
             .then((response) => {
             if (response.ok) {
-                setSuccessMessage('Update Successful!'); // Show success message
+                setSuccessMessage('Update Successful!');
                 setErrorMessage(''); // Clear error message
             }
             else {
@@ -109,7 +110,7 @@ function ContextTab() {
         })
             .catch((err) => {
             console.error('Error updating:', err);
-            setErrorMessage('Error updating context'); // Show error message
+            setErrorMessage('Error updating context');
         })
             .finally(() => {
             setLoading(false); // Set loading state to false after the request is done

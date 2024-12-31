@@ -16,7 +16,6 @@ async function getContextData(): Promise<string> {
         console.error(`HTTP error! Status: ${response.status}, Message: ${response.statusText}`);
         return '';
     }
-
     const data = await response.json();
     return data;
 }
@@ -24,10 +23,11 @@ async function getContextData(): Promise<string> {
 export default function ContextTab() {
     const [dataMap, setDataMap] = useState(new Map());
     const [tempData, setTempData] = useState<Map<string, string[]>>(new Map());
-    const [loading, setLoading] = useState(false); // State for loading
-    const [successMessage, setSuccessMessage] = useState(''); // State for success message
-    const [errorMessage, setErrorMessage] = useState(''); // State for error message
+    const [loading, setLoading] = useState(false); // State for loading spinner
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
 
+    // Fetch existing context data on page load.
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -39,7 +39,6 @@ export default function ContextTab() {
                 console.error('Error fetching data:', error);
             }
         };
-
         fetchData();
     }, []);
 
@@ -73,7 +72,7 @@ export default function ContextTab() {
     const deleteKvPair = (key: string) => {
         setTempData((prevMap) => {
             const newMap = new Map(prevMap);
-            newMap.delete(key); // Remove the key-value pair by its key
+            newMap.delete(key);
             return newMap;
         });
     };
@@ -91,21 +90,21 @@ export default function ContextTab() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(plainObject),
         })
-            .then((response) => {
-                if (response.ok) {
-                    setSuccessMessage('Update Successful!'); // Show success message
-                    setErrorMessage(''); // Clear error message
-                } else {
-                    throw new Error('Failed to update');
-                }
-            })
-            .catch((err) => {
-                console.error('Error updating:', err);
-                setErrorMessage('Error updating context'); // Show error message
-            })
-            .finally(() => {
-                setLoading(false); // Set loading state to false after the request is done
-            });
+        .then((response) => {
+            if (response.ok) {
+                setSuccessMessage('Update Successful!'); 
+                setErrorMessage(''); // Clear error message
+            } else {
+                throw new Error('Failed to update');
+            }
+        })
+        .catch((err) => {
+            console.error('Error updating:', err);
+            setErrorMessage('Error updating context');
+        })
+        .finally(() => {
+            setLoading(false); // Set loading state to false after the request is done
+        });
     };
 
     return (
