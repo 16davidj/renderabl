@@ -23,11 +23,11 @@ function ToolNodesPage() {
     }, []);
     const handleAddNode = () => {
         try {
-            console.log(newNodeSchema);
+            const schema = JSON.parse(newNodeSchema);
             fetch('http://localhost:5500/api/writeToolNode', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newNodeSchema),
+                body: JSON.stringify(schema),
             })
                 .then((res) => res.json())
                 .then((data) => {
