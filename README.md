@@ -1,73 +1,82 @@
 # renderabl
 prototype
 
-# Rebuild frontend after changes
-use the tsc --build command (Command + Shift + b with VSCode) to rebuild .ts to .js files
-npx webpack (from the root component), then start Live Server on HTML
+# sampleApp
 
-# Rebuild frontend after changes
-use the tsc --build command (Command + Shift + b with VSCode) to rebuild .ts to .js files
-npx webpack
+/src/sampleApp is a sample chatbot that takes in prompts and responds with UI cards. This would normally be an example of a client company which has an app that takes in text prompts, and want UI golf cards to trigger as a response. I just happend to create a sample app so that I can pretend to be the client, and have a better understanding of what part of the workflows I can automate with Renderabl FE and BE.
 
-# Build sampleApp (chat app that interacts with the Renderabl backend)
-live-server --port=5500
+![Sample app with golf player cards](./screenshots/playercard.png)
+![Sample app with golf tournament card](./screenshots/tournamentcard1.png)
+![Sample app with golf tournament card, continued](./screenshots/tournamentcard2.png)
+
+
+# infraWebApp
+This is a web app for developers to help interact with the Renderabl backend. It's purpose is to allow developers to generate new function call tools, new UI components, and new context KV-entries. This data will all be ingested by the backend when the developer's app when they take in prompts and pass it to the backend, which appropriately determines which developer-provided function to call, and which arguments it should take in.
+
+![Context tab](./screenshots/contexttab.png)
+![Tool node tab](./screenshots/toolnodetab.png)
+![Component generator tab](./screenshots/generatortab.png)
+
+# Development steps
+## Rebuild after changes
+use the `tsc --build` command (Command + Shift + b with VSCode) to rebuild .ts to .js files in tsconfig.json
+
+For targets in the sampleApp, run command for src/sampleApp/tsconfig.json
+For the infraWebApp, run command for `src/infraWebApp/tsconfig.json`
+
+then, do: `npx webpack` (from the root component), then start Live Server on HTML
+
+For any styling changes on the sampleApp, run `npx tailwindcss -i ./src/sampleApp/app.css -o ./src/sampleApp/output.css`
+
+infraWebApp uses materials UI, not tailwind, so this step is not necessary.
+
+## Build sampleApp or infraWebApp
+navigate to their respective directories where index.html is located, then run `live-server`
 
 Alternatively, I use the VSCode extension "Live Server" so that it's a click away.
 
-# Start Redis server (before starting backend server)
-redis-server
-
-# Start backend server
-node ./dist/renderableBe/backend.js 
-
-# Run tailwind (whenever there is a styling change)
-npx tailwindcss -i ./src/sampleApp/app.css -o ./src/sampleApp/output.css
+# Start servers
+## Start Redis server (before starting backend server)
+First, start the Redis DB server with `redis-server`, then for the infraWebApp start the backend server with `node ./dist/renderableBe/backend.js`. For the sampleApp, start `node ./dist/sampleApp/backend.js`
 
 # Directory breakdown
-/src/generalcards contains .tsx UI cards that I was experimenting with before I narrowed down to the golf vertical for the MVP.
+/sampleApp/generalcards contains .tsx UI cards that I was experimenting with before I narrowed down to the golf vertical for the MVP.
 
-/src/golfcards contains .tsx UI cards that I've created. golfballcard.tsx was generated via a call to generateComponent in backend.ts, and golfplayercard.tsx and golftournamentcard.tsx were created manually.
+/sampleApp/golfcards contains .tsx UI cards that I've created. golfballcard.tsx was generated via a call to generateComponent in backend.ts, and golfplayercard.tsx and golftournamentcard.tsx were created manually.
 
 /src/renderableBe contains backend.ts, which contains both the backend for the app.tsx I created, as well as backend functions that would live in the Renderabl service. I did this out of ease of just starting up one local server for development. fakedb.ts is where I put KV pairs that I would normally put in a DB.
 
 /src/renderableFe contains renderableFeUtils.ts, which contains helper logic that builds out the functionality of Renderable FE by automating card generation and mutations (eventually).
 
-/src/sampleApp is a sample chatbot that takes in prompts and responds with UI cards. This would normally be an example of a client company which has an app that takes in text prompts, and want UI cards. I just happend to create a sample app so that I can pretend to be the client, and have a better understanding of what part of the workflows I can automate with Renderabl FE and BE.
-
 /src/types.ts contains all the types and props.
 
-# Example generation request
-I use Postman, and create a Post request to http://localhost:5500/api/generateRenderabl, with a raw body of:
+# API
+## Example api/generateComponent request
 {
-    "directoryPath": "/Users/David/Desktop/renderabl/src/golfcards",
     "agentName": "GolfBallAgent",
-    "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"name":{"type":"string"}}, "required":["name"], "additionalProperties": false},
     "agentProps": "picture_url: string, name: string, summary:string, launch_characteristics:string, spin_characteristics: string, year_introduced:number, firmness:string, players_who_used:string[]",
-    "agentDescription": "A chat agent designed to show UI card components about various golf balls. Call whenever you need to respond to a prompt that asks about a golf ball. The input parameters should be the golf ball name",
-    "outputPath": "/Users/David/Desktop/renderabl/src/golfcards/golfballcard.tsx"
+    "agentDescription": "A chat agent designed to show UI card components about various golf balls. Call whenever you need to respond to a prompt that asks about a golf ball. The input parameters should be the golf ball name"
 }
 
+## Example api/writeToolNode request
 {
-    "directoryPath": "/Users/David/Desktop/renderabl/src/golfcards",
     "agentName": "TraficAgent",
     "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"handler":{"type":"string"}, "cell":{"type":"string"}}, "required":["handler"], "additionalProperties": false},
-    "agentProps": "traffic_qps: number[]",
-    "agentDescription": "An agent designed to show UI card components of monitoring traffic data of a specific endpoint. Call whenever you need to respond to a prompt that asks traffic data given some parameters",
-    "outputPath": "/Users/David/Desktop/renderabl/src/golfcards/trafficGraph.tsx"
+    "agentDescription": "An agent designed to show UI card components of monitoring traffic data of a specific endpoint. Call whenever you need to respond to a prompt that asks traffic data given some parameters"
 }
 
-# Example mutation request
-http://localhost:5500/api/mutateRenderabl, with a raw body of:
+You can use Postman, but the infraWebApp also provides a UI wrapper that will call the API.
+
+## Example api/getFunctionCall request
 {
-    "agentName": "GolfBallAgent",
-    "mutation" : "Please add to the UI component so that it can display info about the golf ball's material on the inside (eg. urethane). The field should be a string."
+    "prompt": "Tiger Woods 2008"
 }
 
-# Getters
+## Getters
 http://localhost:5500/api/getToolGraph
 http://localhost:5500/api/getContext
 
-# Providing context
+## Example api/provideContext
 http://localhost:5500/api/provideContext
 
 {

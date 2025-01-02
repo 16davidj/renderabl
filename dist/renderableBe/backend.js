@@ -32,33 +32,8 @@ app.use((_, res, next) => {
 });
 app.options('*', (0, cors_1.default)());
 (0, redisClient_1.connectRedis)();
-// Endpoint to set a key-value pair, if the value is complex (use this for the decider graph).
-app.post('/api/redis', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { key, value } = req.body;
-    try {
-        yield redisClient_1.redisClient.set(key, JSON.stringify(value));
-        res.status(200).send({ message: 'Key-Value pair saved to Redis' });
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).send({ error: 'Error saving data to Redis' });
-    }
-}));
-// Endpoint to get a value by key
-app.get('/api/redis/:key', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { key } = req.params;
-    try {
-        const value = yield redisClient_1.redisClient.get(key);
-        res.status(200).send({ key, value: value ? JSON.parse(value) : null });
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).send({ error: 'Error retrieving data from Redis' });
-    }
-}));
 const router = express_1.default.Router();
 router.post('/api/generateRenderabl', generateAgent);
-router.post('/api/mutateRenderabl', mutateAgent);
 router.post('/api/provideContext', provideContext);
 router.get('/api/getContext', getContext);
 router.get('/api/getToolGraph', getToolGraph);
@@ -67,31 +42,28 @@ router.post('/api/writeToolNode', writeToolNodeEndpoint);
 router.post('/api/generateComponent', generateComponentEndpoint);
 app.use(router);
 const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function validateReq(req, res) {
+    if (!req.is('application/json')) {
+        return res.status(400).json({ error: 'Invalid request body' });
+    }
+    if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
+    }
+}
 function generateComponentEndpoint(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
+        validateReq(req, res);
         const body = req.body;
-        if (!req.is('application/json')) {
-            return res.status(400).json({ error: 'Invalid request body' });
-        }
-        if (!body) {
-            return res.status(400).json({ error: "Prompt is required" });
-        }
-        const component = yield (0, renderableFeUtils_1.generateComponent)(body.agentName, body.agentProps, body.agentDescription, body.similarComponents);
+        const component = yield (0, renderableFeUtils_1.generateComponent)(req.body.agentName, req.body.agentProps, body.agentDescription, body.similarComponents);
         return res.status(200).json(component);
     });
 }
 function writeToolNodeEndpoint(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
+        validateReq(req, res);
+        const [contextDataJson, toolGraphJson] = yield Promise.all([redisClient_1.redisClient.get('contextData'), redisClient_1.redisClient.get('toolGraph')]);
         const body = req.body;
-        if (!req.is('application/json')) {
-            return res.status(400).json({ error: 'Invalid request body' });
-        }
-        if (!body) {
-            return res.status(400).json({ error: "Prompt is required" });
-        }
-        const contextDataJson = yield redisClient_1.redisClient.get('contextData');
         const toolNode = yield (0, renderableFeUtils_1.generateToolNode)(body.agentName, body.agentDescription, body.agentArgs, contextDataJson);
-        const toolGraphJson = yield redisClient_1.redisClient.get('toolGraph');
         const toolGraph = JSON.parse(toolGraphJson);
         toolGraph.push(toolNode);
         redisClient_1.redisClient.set('toolGraph', JSON.stringify(toolGraph));
@@ -100,18 +72,12 @@ function writeToolNodeEndpoint(req, res) {
 }
 function getFunctionCallDecision(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        const body = req.body;
-        if (!req.is('application/json')) {
-            return res.status(400).json({ error: 'Invalid request body' });
-        }
-        if (!body) {
-            return res.status(400).json({ error: "Prompt is required" });
-        }
+        validateReq(req, res);
         const toolGraphJson = yield redisClient_1.redisClient.get('toolGraph');
         const toolGraph = JSON.parse(toolGraphJson);
         const prompt = {
             role: "user",
-            content: body.prompt
+            content: req.body.prompt
         };
         const response = yield openai.chat.completions.create({
             model: "gpt-4o",
@@ -129,19 +95,14 @@ function getFunctionCallDecision(req, res) {
             const toolCall = response.choices[0].message.tool_calls[0];
             const functionName = toolCall.function.name;
             const args = JSON.parse(toolCall.function.arguments);
-            return res.status(200).json({ message: "Function Name: " + functionName + " with arguments: " + JSON.stringify(args) });
+            return res.status(200).json({ message: "Function chosen: " + functionName + " with arguments: " + JSON.stringify(args) });
         }
     });
 }
 function provideContext(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const prompt = req.body;
-        if (!req.is('application/json')) {
-            return res.status(400).json({ error: 'Invalid request body' });
-        }
-        if (!prompt) {
-            return res.status(400).json({ error: "Prompt is required" });
-        }
+        validateReq(req, res);
         const kvObject = prompt;
         if (!kvObject) {
             return res.status(400).json({ error: "Valid kv-pair object is required" });
@@ -164,13 +125,8 @@ function getToolGraph(req, res) {
 }
 function generateAgent(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
+        validateReq(req, res);
         const prompt = req.body;
-        if (!req.is('application/json')) {
-            return res.status(400).json({ error: 'Invalid request body' });
-        }
-        if (!prompt) {
-            return res.status(400).json({ error: "Prompt is required" });
-        }
         const generateComponentPromise = (0, renderableFeUtils_1.generateComponentFile)(prompt.directoryPath, prompt.agentName, prompt.agentProps, prompt.agentDescription, prompt.outputPath);
         const [toolGraphJson, contextDataJson] = yield Promise.all([redisClient_1.redisClient.get('toolGraph'), redisClient_1.redisClient.get('contextData')]);
         const generateToolNodePromise = (0, renderableFeUtils_1.generateToolNode)(prompt.agentName, prompt.agentDescription, prompt.agentArgs, contextDataJson);
@@ -180,23 +136,6 @@ function generateAgent(req, res) {
         redisClient_1.redisClient.set('toolGraph', JSON.stringify(toolGraph));
         redisClient_1.redisClient.set((0, redisUtils_1.createFileKey)(prompt.agentName), prompt.outputPath);
         return res.status(200).json({ message: "File generated successfully" });
-    });
-}
-function mutateAgent(req, res) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const body = req.body;
-        if (!req.is('application/json')) {
-            return res.status(400).json({ error: 'Invalid request body' });
-        }
-        if (!prompt) {
-            return res.status(400).json({ error: "Prompt is required" });
-        }
-        const fileLocation = yield redisClient_1.redisClient.get((0, redisUtils_1.createFileKey)(body.agentName));
-        if (!fileLocation) {
-            return res.status(400).json({ error: "File location not found" });
-        }
-        (0, renderableFeUtils_1.mutateComponentFile)(fileLocation, body.agentName, body.mutation);
-        return res.status(200).json({ message: "File mutated successfully" });
     });
 }
 app.listen(port, () => {

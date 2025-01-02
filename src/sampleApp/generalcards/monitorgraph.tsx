@@ -24,7 +24,6 @@ const MonitoringGraph : React.FC<MonitoringGraphProps> = ({ handlerName, inputDa
     ],
   };
 
-  // Chart options
   const options = {
     responsive: true,
     plugins: {

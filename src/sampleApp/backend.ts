@@ -119,235 +119,216 @@ async function genericAgent<T extends ZodType>(
 }
 
 async function renderableBe(req:Request, res:Response) {
-    const prompt : Message[] = req.body.messages;
-    if (!req.is('application/json')) {
-        return res.status(400).json({ error: 'Invalid request body' });
-    }
-    if (!prompt) {
-      return res.status(400).json({error: "Prompt is required"});
-    }
-    const toolGraphJson = await redisClient.get('toolGraph');
-    const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
-    const functionCallResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{
-        role: "system",
-        content: `You are an agent that determines which function in the tools to call given the user's prompt. Use the entire conversation history for context, but prioritize the last user message for making your decision. If no other function is appropriate, default to calling the "chatAgent" function.`
-    }, prompt[prompt.length-1]],
-      tools: toolGraph,
-    });
-    const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt)
-    return res.status(200).json(messageResponse);
+  const prompt : Message[] = req.body.messages;
+  if (!req.is('application/json')) {
+      return res.status(400).json({ error: 'Invalid request body' });
   }
-
-  // function monitoringGraphAgent(handlerName : string) : Message {
-//   const response : Message = {
-//     role: "system",
-//     content: "chat response with monitoring graph data to render.",
-//     graph: { handlerName: handlerName, inputData: getTrafficData(handlerName)},
-//     cardType: "graph"
-//   }
-//   return response
-// }
+  if (!prompt) {
+    return res.status(400).json({error: "Prompt is required"});
+  }
+  const toolGraphJson = await redisClient.get('toolGraph');
+  const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
+  const functionCallResponse = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{
+      role: "system",
+      content: `You are an agent that determines which function in the tools to call given the user's prompt. Use the entire conversation history for context, but prioritize the last user message for making your decision. If no other function is appropriate, default to calling the "chatAgent" function.`
+  }, prompt[prompt.length-1]],
+    tools: toolGraph,
+  });
+  const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt)
+  return res.status(200).json(messageResponse);
+}
 
 async function personAgent(person : string): Promise<Message> {
-    try {
-      const prompt : Message = { role: "user", content: person }
-      const result = await genericAgent(prompt, PersonCardStructure, "You are a helpful assistant that gathers information about a particular person.");
-      const parsedOutput : PersonCardProps = JSON.parse(result);
-      // Client API calls for agent specific features not available to LLM.
-      if (parsedOutput.name) {
-        parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
-      }
-      const messageResponse : Message = {
-        role: "system",
-        content: "chat response with a UI card about the person.",
-        personCard: parsedOutput,
-        cardType: "person"
-      }
-      return messageResponse;
-    } catch (error) {
-      console.error('Error from OpenAI:', error)
+  try {
+    const prompt : Message = { role: "user", content: person }
+    const result = await genericAgent(prompt, PersonCardStructure, "You are a helpful assistant that gathers information about a particular person.");
+    const parsedOutput : PersonCardProps = JSON.parse(result);
+    // Client API calls for agent specific features not available to LLM.
+    if (parsedOutput.name) {
+      parsedOutput.profilePictureUrl = await getPictureUrl(parsedOutput.name, 1.0);
     }
+    const messageResponse : Message = {
+      role: "system",
+      content: "chat response with a UI card about the person.",
+      personCard: parsedOutput,
+      cardType: "person"
+    }
+    return messageResponse;
+  } catch (error) {
+    console.error('Error from OpenAI:', error)
   }
-  
-export async function golfPlayerAgent(args): Promise<Message> {
-    const player : string = args.player;
-    let year : number = args.year;
-    if (!player) {
-        console.error("Player name is required");
-        return;
-    }
-    if (!year) {
-        year = new Date().getFullYear();
-    }
-    try {
-        const agentDescription : string = "You are a helpful assistant that gathers information about a particular golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year."; 
-        // for whatever reason, GPT doesn't like the comma in the prompt, so I used "in" instead
-        const promptContent = player + " in " + year;
-        const prompt : Message = { role: "user", content: promptContent };
-        const [response, profilePictureUrl] = await Promise.all([genericAgent(prompt, GolfPlayerCardStructure, agentDescription), getPictureUrl(promptContent, 1.0)]);
-        const parsedOutput : GolfPlayerCardProps = JSON.parse(response);
-        parsedOutput.profilePictureUrl = profilePictureUrl;
-        if (year != new Date().getFullYear()) {
-        parsedOutput.year = year;
-        }
-        const messageResponse : Message = {
-        role: "system",
-        content: "chat response with a UI card about the golf player.",
-        golfPlayerCard: parsedOutput,
-        cardType: "player"
-        }
-        // Get Sponsor and Tour logos from Redis.
-        const [sponsorLogoUrl, tourLogoUrl] = await Promise.all([
-        redisClient.get(createSponsorLogoKey(parsedOutput.sponsor)),
-        redisClient.get(createTourLogoKey(parsedOutput.tour))
-        ])
-        parsedOutput.sponsorLogoUrl = sponsorLogoUrl;
-        parsedOutput.tourLogoUrl = tourLogoUrl;
-        return messageResponse;
-    } catch (error) {
-        console.error('Error from OpenAI:', error)
-    }
 }
   
-  export async function golfTournamentAgent(args): Promise<Message> {
-    const tournament : string = args.tournament;
-    let year : number = args.year;
-    
-    if(!tournament) {
-      console.error("Tournament name is required");
+export async function golfPlayerAgent(args): Promise<Message> {
+  let year : number = args.year;
+  if (!args.player) {
+      console.error("Player name is required");
       return;
-    }
-    if (!year) {
-      year = new Date().getFullYear();
-    }
-  
-    try {
-      const agentDescription : string = "You are a helpful assistant that gathers information about a golf tournament in a specific year. If the year is not specified, get information from the most recent tournament.";
-      const promptContent = tournament + " golf tournament in " + year;
-      const prompt : Message = { role: "user", content: promptContent };
-      const [response, coursePictureUrl, ytHighlightsId] = await Promise.all([genericAgent(
-          prompt, GolfTournamentCardStructure, agentDescription),
-          getPictureUrl(promptContent, 0.9), getYouTubeVodId(promptContent + " highlights")
-        ]);
-      const parsedOutput : GolfTournamentCardProps = JSON.parse(response);
-      parsedOutput.coursePictureUrl = coursePictureUrl;
-      parsedOutput.ytHighlightsId = ytHighlightsId;
-      const messageResponse : Message = {
-        role: "system",
-        content: "chat response with a UI card about the golf tournament.",
-        golfTournamentCard: parsedOutput,
-        cardType: "tournament"
-      }
-      return messageResponse;
-      } catch (error) {
-        console.error('Error from OpenAI:', error)
-      }
   }
-  
-  async function chatAgent(args: { messages: Message[]; } | Message[]) : Promise<Message> {
-    let prompt : Message[];
-    if (args instanceof Array) {
-      prompt = args;
-    } else {
-      prompt = args.messages;
-    }
-    if (!prompt) {
-      console.error("Prompt for chat agent is required");
-      return;
-    }
-    try {
-      const response = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{
-              role: "system",
-              content: "You are a helpful assistant that responds to chat messages."
-        }, ...prompt],
-      })
-      const messageResponse : Message = {
-        role: "system",
-        content: response.choices[0].message.content,
-        cardType: "string"
+  if (!year) {
+      year = new Date().getFullYear();
+  }
+  try {
+      const agentDescription : string = "You are a helpful assistant that gathers information about a particular golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year."; 
+      // for whatever reason, GPT doesn't like the comma in the prompt, so I used "in" instead
+      const promptContent = args.player + " in " + year;
+      const prompt : Message = { role: "user", content: promptContent };
+      const [response, profilePictureUrl] = await Promise.all([genericAgent(prompt, GolfPlayerCardStructure, agentDescription), getPictureUrl(promptContent, 1.0)]);
+      const parsedOutput : GolfPlayerCardProps = JSON.parse(response);
+      parsedOutput.profilePictureUrl = profilePictureUrl;
+      if (year != new Date().getFullYear()) {
+      parsedOutput.year = year;
       }
-      return messageResponse
+      const messageResponse : Message = {
+      role: "system",
+      content: "chat response with a UI card about the golf player.",
+      golfPlayerCard: parsedOutput,
+      cardType: "player"
+      }
+      // Get Sponsor and Tour logos from Redis.
+      const [sponsorLogoUrl, tourLogoUrl] = await Promise.all([
+        redisClient.get(createSponsorLogoKey(parsedOutput.sponsor)),
+        redisClient.get(createTourLogoKey(parsedOutput.tour))
+      ])
+      parsedOutput.sponsorLogoUrl = sponsorLogoUrl;
+      parsedOutput.tourLogoUrl = tourLogoUrl;
+      return messageResponse;
+  } catch (error) {
+      console.error('Error from OpenAI:', error)
+  }
+}
+  
+export async function golfTournamentAgent(args): Promise<Message> {
+  let year : number = args.year;
+  
+  if(!args.tournament) {
+    console.error("Tournament name is required");
+    return;
+  }
+  if (!year) {
+    year = new Date().getFullYear();
+  }
+
+  try {
+    const agentDescription : string = "You are a helpful assistant that gathers information about a golf tournament in a specific year. If the year is not specified, get information from the most recent tournament.";
+    const promptContent = args.tournament + " golf tournament in " + year;
+    const prompt : Message = { role: "user", content: promptContent };
+    const [response, coursePictureUrl, ytHighlightsId] = await Promise.all([genericAgent(
+        prompt, GolfTournamentCardStructure, agentDescription),
+        getPictureUrl(promptContent, 0.9), getYouTubeVodId(promptContent + " highlights")
+    ]);
+    const parsedOutput : GolfTournamentCardProps = JSON.parse(response);
+    parsedOutput.coursePictureUrl = coursePictureUrl;
+    parsedOutput.ytHighlightsId = ytHighlightsId;
+    const messageResponse : Message = {
+      role: "system",
+      content: "chat response with a UI card about the golf tournament.",
+      golfTournamentCard: parsedOutput,
+      cardType: "tournament"
+    }
+    return messageResponse;
     } catch (error) {
       console.error('Error from OpenAI:', error)
     }
-  }
+}
 
-  async function agentDeciderAndRunner(responseString : string, prompt : Message[]) : Promise<Message> {
-    const response = JSON.parse(responseString);
-    if (!response.choices[0].message.tool_calls) {
-      // Default to chat agent if there are no valid function calls. 
-      return chatAgent(prompt);
-    } else {
-      const toolCall = response.choices[0].message.tool_calls[0];
-      const functionName = toolCall.function.name;
-      const args = JSON.parse(toolCall.function.arguments);
-      console.log("Function Name: " + functionName + " with arguments: " + JSON.stringify(args));
-      switch (functionName) {
-        case "chatAgent":
-          return chatAgent(args);
-        // case "personAgent":
-        //   return personAgent(args.person);
-        // case "monitoringGraphAgent":
-        //   return monitoringGraphAgent(args.handlerName);
-        case "golfPlayerAgent":
-          return golfPlayerAgent(args); 
-        case "golfTournamentAgent":
-          return golfTournamentAgent(args);
-      } 
+async function chatAgent(args: { messages: Message[]; } | Message[]) : Promise<Message> {
+  let prompt : Message[];
+  if (args instanceof Array) {
+    prompt = args;
+  } else {
+    prompt = args.messages;
+  }
+  if (!prompt) {
+    console.error("Prompt for chat agent is required");
+    return;
+  }
+  try {
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+            role: "system",
+            content: "You are a helpful assistant that responds to chat messages."
+      }, ...prompt],
+    })
+    const messageResponse : Message = {
+      role: "system",
+      content: response.choices[0].message.content,
+      cardType: "string"
     }
+    return messageResponse
+  } catch (error) {
+    console.error('Error from OpenAI:', error)
   }
+}
 
-  // Fetch a picture URL from Google Custom Image Search API
-// @query: the query to search for
-// @ratio: the aspect ratio the picture must satisfy
+async function agentDeciderAndRunner(responseString : string, prompt : Message[]) : Promise<Message> {
+  const response = JSON.parse(responseString);
+  if (!response.choices[0].message.tool_calls) {
+    // Default to chat agent if there are no valid function calls. 
+    return chatAgent(prompt);
+  } else {
+    const toolCall = response.choices[0].message.tool_calls[0];
+    const functionName = toolCall.function.name;
+    const args = JSON.parse(toolCall.function.arguments);
+    console.log("Function Name: " + functionName + " with arguments: " + JSON.stringify(args));
+    switch (functionName) {
+      case "chatAgent":
+        return chatAgent(args);
+      case "personAgent":
+        return personAgent(args.person);
+      case "golfPlayerAgent":
+        return golfPlayerAgent(args); 
+      case "golfTournamentAgent":
+        return golfTournamentAgent(args);
+    } 
+  }
+}
+
+// Fetch a picture URL from Google Custom Image Search API
 export async function getPictureUrl(query : string, ratio: number) : Promise<string> {
-    try {
-      const CX = '70fc0f5d68c984853';
-      const FILE_TYPE = 'jpg';
-      const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${query}&searchType=image&num=5&fileType=${FILE_TYPE}`;
-      // Use fetch to call the Google API
-      const response = await fetch(googleApiUrl);
-      if (!response.ok) {
-        throw new Error(`Google API error: ${response.statusText}`);
-      }
-      const data = await response.json();
-      for (const item of data.items) {
-        if (item.link && item.image.width > 0 && item.image.height > 0) {
-          const aspectRatio = item.image.width / item.image.height;
-          if (aspectRatio >= ratio) {
-            return item.link
-          }
+  try {
+    const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=70fc0f5d68c984853&q=${query}&searchType=image&num=5&fileType=jpg`;
+    const response = await fetch(googleApiUrl);
+    if (!response.ok) {
+      throw new Error(`Google API error: ${response.statusText}`);
+    }
+    const data = await response.json();
+    for (const item of data.items) {
+      if (item.link && item.image.width > 0 && item.image.height > 0) {
+        const aspectRatio = item.image.width / item.image.height;
+        if (aspectRatio >= ratio) {
+          return item.link
         }
       }
-    } catch (error) {
-      console.error('Error fetching data from Google API:', error);
-      return "";
     }
+  } catch (error) {
+    console.error('Error fetching data from Google API:', error);
+    return "";
+  }
 }
 
 // Fetch a youtube video id from YouTube V3 Data API
 // @query: query to search for
 export async function getYouTubeVodId(query : string) : Promise<string> {
-    try {
-        const youtubeApiUrl = `https://www.googleapis.com/youtube/v3/search?key=${process.env.GOOGLE_API_KEY}&part=snippet&q=${query}&maxResults=5`;
-        const response = await fetch(youtubeApiUrl);
-        if (!response.ok) {
-        throw new Error(`YouTube API error: ${response.statusText}`);
-        }
-        const data = await response.json();
-        for (const item of data.items) {
-        if (item.id && item.id.videoId) {
-            return item.id.videoId;
-        }
-        }
-    } catch (error) {
-        console.error('Error fetching data from YouTube V3 Data API:', error);
-        return "";
+  try {
+      const youtubeApiUrl = `https://www.googleapis.com/youtube/v3/search?key=${process.env.GOOGLE_API_KEY}&part=snippet&q=${query}&maxResults=5`;
+      const response = await fetch(youtubeApiUrl);
+      if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.statusText}`);
+      }
+      const data = await response.json();
+      for (const item of data.items) {
+      if (item.id && item.id.videoId) {
+          return item.id.videoId;
+      }
     }
+  } catch (error) {
+      console.error('Error fetching data from YouTube V3 Data API:', error);
+      return "";
+  }
 }
 
 app.listen(port, () => {

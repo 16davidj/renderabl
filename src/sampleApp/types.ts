@@ -11,7 +11,7 @@ export interface TrafficData {
     timestamp: number; // Unix timestamp in milliseconds
     qps: number;
 }  
-  
+
 export type Message = {
     role: 'system' | 'user' | 'assistant'
     content: string,

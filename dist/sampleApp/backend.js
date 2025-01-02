@@ -140,15 +140,6 @@ function renderableBe(req, res) {
         return res.status(200).json(messageResponse);
     });
 }
-// function monitoringGraphAgent(handlerName : string) : Message {
-//   const response : Message = {
-//     role: "system",
-//     content: "chat response with monitoring graph data to render.",
-//     graph: { handlerName: handlerName, inputData: getTrafficData(handlerName)},
-//     cardType: "graph"
-//   }
-//   return response
-// }
 function personAgent(person) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -174,9 +165,8 @@ function personAgent(person) {
 }
 function golfPlayerAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
-        const player = args.player;
         let year = args.year;
-        if (!player) {
+        if (!args.player) {
             console.error("Player name is required");
             return;
         }
@@ -186,7 +176,7 @@ function golfPlayerAgent(args) {
         try {
             const agentDescription = "You are a helpful assistant that gathers information about a particular golf player in a specific year. If the year is not specified, get information up to the current year. If the year is specified, only get information that was available up to that year.";
             // for whatever reason, GPT doesn't like the comma in the prompt, so I used "in" instead
-            const promptContent = player + " in " + year;
+            const promptContent = args.player + " in " + year;
             const prompt = { role: "user", content: promptContent };
             const [response, profilePictureUrl] = yield Promise.all([genericAgent(prompt, types_1.GolfPlayerCardStructure, agentDescription), getPictureUrl(promptContent, 1.0)]);
             const parsedOutput = JSON.parse(response);
@@ -216,9 +206,8 @@ function golfPlayerAgent(args) {
 }
 function golfTournamentAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
-        const tournament = args.tournament;
         let year = args.year;
-        if (!tournament) {
+        if (!args.tournament) {
             console.error("Tournament name is required");
             return;
         }
@@ -227,7 +216,7 @@ function golfTournamentAgent(args) {
         }
         try {
             const agentDescription = "You are a helpful assistant that gathers information about a golf tournament in a specific year. If the year is not specified, get information from the most recent tournament.";
-            const promptContent = tournament + " golf tournament in " + year;
+            const promptContent = args.tournament + " golf tournament in " + year;
             const prompt = { role: "user", content: promptContent };
             const [response, coursePictureUrl, ytHighlightsId] = yield Promise.all([genericAgent(prompt, types_1.GolfTournamentCardStructure, agentDescription),
                 getPictureUrl(promptContent, 0.9), getYouTubeVodId(promptContent + " highlights")
@@ -296,10 +285,8 @@ function agentDeciderAndRunner(responseString, prompt) {
             switch (functionName) {
                 case "chatAgent":
                     return chatAgent(args);
-                // case "personAgent":
-                //   return personAgent(args.person);
-                // case "monitoringGraphAgent":
-                //   return monitoringGraphAgent(args.handlerName);
+                case "personAgent":
+                    return personAgent(args.person);
                 case "golfPlayerAgent":
                     return golfPlayerAgent(args);
                 case "golfTournamentAgent":
@@ -309,15 +296,10 @@ function agentDeciderAndRunner(responseString, prompt) {
     });
 }
 // Fetch a picture URL from Google Custom Image Search API
-// @query: the query to search for
-// @ratio: the aspect ratio the picture must satisfy
 function getPictureUrl(query, ratio) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const CX = '70fc0f5d68c984853';
-            const FILE_TYPE = 'jpg';
-            const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=${CX}&q=${query}&searchType=image&num=5&fileType=${FILE_TYPE}`;
-            // Use fetch to call the Google API
+            const googleApiUrl = `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&cx=70fc0f5d68c984853&q=${query}&searchType=image&num=5&fileType=jpg`;
             const response = yield fetch(googleApiUrl);
             if (!response.ok) {
                 throw new Error(`Google API error: ${response.statusText}`);

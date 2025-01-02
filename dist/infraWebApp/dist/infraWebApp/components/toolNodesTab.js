@@ -1,4 +1,3 @@
-'use client';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = ToolNodesPage;
@@ -11,10 +10,10 @@ const defaultSchema = `{
     "agentDescription": "Insert description here"
 }`;
 function ToolNodesPage() {
-    const [toolNodes, setToolNodes] = (0, react_1.useState)([]); // Array of tool nodes
-    const [newNodeSchema, setNewNodeSchema] = (0, react_1.useState)(defaultSchema); // JSON Schema input
-    const [prompt, setPrompt] = (0, react_1.useState)(''); // User's prompt input
-    const [decision, setDecision] = (0, react_1.useState)(null); // Decision JSON
+    const [toolNodes, setToolNodes] = (0, react_1.useState)([]);
+    const [newNodeSchema, setNewNodeSchema] = (0, react_1.useState)(defaultSchema);
+    const [prompt, setPrompt] = (0, react_1.useState)('');
+    const [decision, setDecision] = (0, react_1.useState)(null);
     // Fetch existing tool nodes on page load
     (0, react_1.useEffect)(() => {
         fetch('http://localhost:5500/api/getToolGraph')

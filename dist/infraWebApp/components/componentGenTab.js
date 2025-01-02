@@ -68,21 +68,17 @@ const ComponentGenerator = () => {
             if (response.ok) {
                 const data = yield response.json();
                 setGeneratedCode(data);
+                console.log("Generated code:", data);
                 // Transpile JSX to plain JavaScript
+                // We need to use export default here instead of return because we
+                // would get componentGenTab.tsx:50 Error generating component: SyntaxError:
+                // unknown: 'return' outside of function. 
                 const transpiledCode = Babel.transform(data, {
                     presets: ["react"],
                 }).code;
-                console.log("Transpiled Code:", transpiledCode);
-                try {
-                    const Component = new Function('React', `${transpiledCode.replace("export default", "return")}`)(react_1.default);
-                    setRenderOutput((0, jsx_runtime_1.jsx)(Component, {}));
-                }
-                catch (error) {
-                    console.error("Error rendering component:", error);
-                }
-            }
-            else {
-                console.error("Failed to generate component.");
+                // If we don't replace "export default" with return, we get: Error rendering component: SyntaxError: Unexpected token 'export
+                const Component = new Function('React', `${transpiledCode.replace("export default", "return")}`)(react_1.default);
+                setRenderOutput((0, jsx_runtime_1.jsx)(Component, {}));
             }
         }
         catch (error) {

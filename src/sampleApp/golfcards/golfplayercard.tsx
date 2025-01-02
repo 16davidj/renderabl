@@ -59,7 +59,6 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
 
   return (
     <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
-      {/* Profile Picture */}
       {profilePictureUrl && (
         <div className="w-full h-64 bg-gray-100 overflow-hidden">
           <img
@@ -99,7 +98,6 @@ const GolfPlayerCard: React.FC<GolfPlayerCardProps> = ({
 
       {/* Player Details */}
       <div className="p-4">
-        {/* Birthday and Age */}
         <div className="text-sm text-gray-600 mb-2">
           <p>
             <strong>Born:</strong> {birthday}

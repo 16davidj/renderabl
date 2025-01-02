@@ -2,7 +2,6 @@ import './output.css'
 import React, {useState} from 'react'
 import {Message} from './types'
 import PersonCard from "./generalcards/personcard";
-import MonitoringGraph from './generalcards/monitorgraph';
 import GolfPlayerCard from './golfcards/golfplayercard';
 import GolfTournamentCard from './golfcards/golftournamentcard';
 
@@ -19,8 +18,6 @@ function App() {
             }
         } else if (message.cardType === "person"){
             return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><PersonCard {...message.personCard}/></p></div>)
-        } else if (message.cardType === "graph") {
-            return (<div><MonitoringGraph {...message.graph}/></div>)
         } else if (message.cardType === "player") {
             return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfPlayerCard {...message.golfPlayerCard} messages={messages} setMessages={setMessages}/></p></div>)
         } else if (message.cardType === "tournament") {

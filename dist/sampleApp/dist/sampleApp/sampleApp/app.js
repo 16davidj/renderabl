@@ -26,7 +26,6 @@ const jsx_runtime_1 = require("react/jsx-runtime");
 require("./output.css");
 const react_1 = require("react");
 const personcard_1 = __importDefault(require("./generalcards/personcard"));
-const monitorgraph_1 = __importDefault(require("./generalcards/monitorgraph"));
 const golfplayercard_1 = __importDefault(require("./golfcards/golfplayercard"));
 const golftournamentcard_1 = __importDefault(require("./golfcards/golftournamentcard"));
 function App() {
@@ -43,9 +42,6 @@ function App() {
         }
         else if (message.cardType === "person") {
             return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(personcard_1.default, Object.assign({}, message.personCard)) }) }));
-        }
-        else if (message.cardType === "graph") {
-            return ((0, jsx_runtime_1.jsx)("div", { children: (0, jsx_runtime_1.jsx)(monitorgraph_1.default, Object.assign({}, message.graph)) }));
         }
         else if (message.cardType === "player") {
             return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golfplayercard_1.default, Object.assign({}, message.golfPlayerCard, { messages: messages, setMessages: setMessages })) }) }));

@@ -20,7 +20,6 @@ const MonitoringGraph = ({ handlerName, inputData }) => {
             },
         ],
     };
-    // Chart options
     const options = {
         responsive: true,
         plugins: {

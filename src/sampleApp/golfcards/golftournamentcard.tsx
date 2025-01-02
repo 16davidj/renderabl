@@ -32,22 +32,22 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
   messages,
   setMessages
 }) => {
-    const fetchGolfPlayer = async (name: string, year: number) => {
-        const response = await fetch(`http://localhost:5500/api/renderabl`, {
-            method:'POST',
-            mode: 'cors',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ messages: [{role: 'user', content: name + " in " + year}] })
-        });
-        const responseMsg : Message = JSON.parse(await response.text())
-        setMessages([...messages, responseMsg])
-    }
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const fetchGolfPlayer = async (name: string, year: number) => {
+      const response = await fetch(`http://localhost:5500/api/renderabl`, {
+          method:'POST',
+          mode: 'cors',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ messages: [{role: 'user', content: name + " in " + year}] })
+      });
+      const responseMsg : Message = JSON.parse(await response.text())
+      setMessages([...messages, responseMsg])
+  }
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-    const handleMouseEnter = (index: number) => setHoveredIndex(index);
-    const handleMouseLeave = () => setHoveredIndex(null);
+  const handleMouseEnter = (index: number) => setHoveredIndex(index);
+  const handleMouseLeave = () => setHoveredIndex(null);
   return (
     <div className="inline-block w-3/4 max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
       {/* Course Picture */}
@@ -84,7 +84,7 @@ const GolfTournamentCard: React.FC<GolfTournamentCardProps> = ({
         </p>
       </div>
 
-      {/* YouTube Video Player */}
+      {/* YouTube Highlights Player */}
       {ytHighlightsId && (
        <div className="p-4">
        <p className="text-lg font-semibold mb-2">Highlights</p>
