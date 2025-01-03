@@ -5,6 +5,7 @@
           "@emotion/styled": "^11.14.0",
           "@mui/icons-material": "^6.3.0",
           "@mui/material": "^6.3.0",
+          "@prisma/client": "^6.1.0",
           "@shadcn/ui": "^0.0.4",
           "@tailwindcss/aspect-ratio": "^0.4.2",
           "@types/express": "^5.0.0",

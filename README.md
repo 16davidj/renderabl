@@ -3,7 +3,7 @@ prototype
 
 # sampleApp
 
-/src/sampleApp is a sample chatbot that takes in prompts and responds with UI cards. This would normally be an example of a client company which has an app that takes in text prompts, and want UI golf cards to trigger as a response. I just happend to create a sample app so that I can pretend to be the client, and have a better understanding of what part of the workflows I can automate with Renderabl FE and BE.
+sampleApp is a sample chatbot that takes in prompts and responds with UI cards. This would normally be an example of a client company which has an app that takes in text prompts, and want UI golf cards to trigger as a response. I just happend to create a sample app so that I can pretend to be the client, and have a better understanding of what part of the workflows I can automate with Renderabl FE and BE.
 
 ![Sample app with golf player cards](./screenshots/playercard.png)
 ![Sample app with golf tournament card](./screenshots/tournamentcard1.png)
@@ -40,15 +40,15 @@ Alternatively, I use the VSCode extension "Live Server" so that it's a click awa
 First, start the Redis DB server with `redis-server`, then for the infraWebApp start the backend server with `node ./dist/renderableBe/backend.js`. For the sampleApp, start `node ./dist/sampleApp/backend.js`
 
 # Directory breakdown
-/sampleApp/generalcards contains .tsx UI cards that I was experimenting with before I narrowed down to the golf vertical for the MVP.
+`src/sampleApp/generalcards` contains .tsx UI cards that I was experimenting with before I narrowed down to the golf vertical for the MVP.
 
-/sampleApp/golfcards contains .tsx UI cards that I've created. golfballcard.tsx was generated via a call to generateComponent in backend.ts, and golfplayercard.tsx and golftournamentcard.tsx were created manually.
+`src/sampleApp/golfcards` contains .tsx UI cards that I've created. golfballcard.tsx was generated via a call to generateComponent in backend.ts, and golfplayercard.tsx and golftournamentcard.tsx were created manually.
 
-/src/renderableBe contains backend.ts, which contains both the backend for the app.tsx I created, as well as backend functions that would live in the Renderabl service. I did this out of ease of just starting up one local server for development. fakedb.ts is where I put KV pairs that I would normally put in a DB.
+`/src/renderableBe` contains backend.ts, which contains both the backend for the app.tsx I created, as well as backend functions that would live in the Renderabl service. I did this out of ease of just starting up one local server for development. fakedb.ts is where I put KV pairs that I would normally put in a DB.
 
-/src/renderableFe contains renderableFeUtils.ts, which contains helper logic that builds out the functionality of Renderable FE by automating card generation and mutations (eventually).
+`/src/renderableFe` contains renderableFeUtils.ts, which contains helper logic that builds out the functionality of Renderable FE by automating card generation and mutations (eventually).
 
-/src/types.ts contains all the types and props.
+`/src/types.ts` contains all the types and props.
 
 # API
 ## Example api/generateComponent request
@@ -141,3 +141,8 @@ http://localhost:5500/api/provideContext
     "FeatureComponent10"
   ]
 }
+
+# Prisma + SQL
+If a model is changed in schema.prisma, rerun these two commands:
+
+`npx prisma migrate dev --name init` and `npx prisma generate`
