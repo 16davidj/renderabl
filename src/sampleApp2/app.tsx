@@ -1,9 +1,8 @@
 import './output.css'
+
 import React, {useState} from 'react'
 import {Message} from './types'
-import PersonCard from "./generalcards/personcard";
-import GolfPlayerCard from './golfcards/golfplayercard';
-import GolfTournamentCard from './golfcards/golftournamentcard';
+import JobRunCard from './cards/jobCard'
 
 function App() {
     const [formValue, setFormValue] = useState('')
@@ -16,12 +15,8 @@ function App() {
             } else {
                 return (<div className="flex"><p className={"message " + message.role + " inline-block mt-8 p-4"}>{message.content}</p></div>)
             }
-        } else if (message.cardType === "person"){
-            return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><PersonCard {...message.personCard}/></p></div>)
-        } else if (message.cardType === "player") {
-            return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfPlayerCard {...message.golfPlayerCard} messages={messages} setMessages={setMessages}/></p></div>)
-        } else if (message.cardType === "tournament") {
-            return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfTournamentCard {...message.golfTournamentCard} messages={messages} setMessages={setMessages}/></p></div>)
+        } else if (message.cardType === "job" && message.jobContent.length > 0) {
+            return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><JobRunCard jobs={message.jobContent}/></p></div>)
         }
     }
 
@@ -34,7 +29,7 @@ function App() {
             cardType: "string"
         }] : messages;
         setMessages(appendMsgs)
-        const response = await fetch(`http://localhost:5500/api/renderabl`, {
+        const response = await fetch(`http://localhost:5500/api/getResponse`, {
             method:'POST',
             mode: 'cors',
             headers: {

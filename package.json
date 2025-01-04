@@ -21,6 +21,7 @@
           "react-dom": "^18.3.1",
           "react-material-ui-carousel": "^3.4.2",
           "redis": "^4.7.0",
+          "uuid": "^11.0.3",
           "zod": "^3.23.8"
      },
      "devDependencies": {

@@ -43,7 +43,7 @@ function validateReq(req:Request, res:Response) {
   if (!req.is('application/json')) {
     return res.status(400).json({ error: 'Invalid request body' });
   }
-  if (!prompt) {
+  if (!req.body) {
     return res.status(400).json({error: "Prompt is required"});
   }
 }
