@@ -27,6 +27,7 @@ router.post('/api/generateRenderabl', generateAgent as (req: Request, res: Respo
 router.post('/api/provideContext', provideContext as (req: Request, res: Response) => void)
 router.get('/api/getContext', getContext as (req: Request, res: Response) => void)
 router.get('/api/getToolGraph', getToolGraph as (req: Request, res: Response) => void)
+router.post('/api/writeToolGraph', writeToolGraph as (req: Request, res: Response) => void)
 router.post('/api/getFunctionCallDecision', getFunctionCallDecision as (req: Request, res: Response) => void)
 router.post('/api/writeToolNode', writeToolNodeEndpoint as (req: Request, res: Response) => void)
 router.post('/api/generateComponent', generateComponentEndpoint as (req: Request, res: Response) => void)
@@ -94,8 +95,8 @@ async function getFunctionCallDecision(req:Request, res:Response) {
 }
 
 async function provideContext(req:Request, res:Response) {
-  const prompt = req.body;
   validateReq(req, res);
+  const prompt = req.body;
   const kvObject : Record<string, string[]> = prompt;
   if (!kvObject) {
     return res.status(400).json({error: "Valid kv-pair object is required"});
@@ -112,6 +113,13 @@ async function getContext(req:Request, res:Response) {
 async function getToolGraph(req:Request, res:Response) {
   const toolGraph = await redisClient.get('toolGraph');
   return res.status(200).json(toolGraph);
+}
+
+async function writeToolGraph(req:Request, res:Response) {
+  validateReq(req, res);
+  const toolSet : OpenAI.ChatCompletionTool[] = req.body;
+  redisClient.set("toolGraph", JSON.stringify(toolSet));
+  return res.status(200).json({ message: "Tool graph updated successfully" });
 }
 
 async function generateAgent(req:Request, res:Response) {

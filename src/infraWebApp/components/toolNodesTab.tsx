@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Box, Button, TextField, Typography, Container } from '@mui/material';
+import { Box, Button, TextField, Typography, Container, IconButton } from '@mui/material';
+import { Delete } from '@mui/icons-material'; // Import Material-UI's Delete icon
+import OpenAI from 'openai';
 
 const defaultSchema = `{
     "agentName": "SampleAgent",
     "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"field1":{"type":"string"}, "field2":{"type":"string"}}, "required":["field1"], "additionalProperties": false},
     "agentDescription": "Insert description here"
-}`
+}`;
 
 export default function ToolNodesPage() {
-    const [toolNodes, setToolNodes] = useState([]);
+    const [toolNodes, setToolNodes] = useState<OpenAI.ChatCompletionTool[]>([]);
     const [newNodeSchema, setNewNodeSchema] = useState(defaultSchema);
     const [prompt, setPrompt] = useState('');
     const [decision, setDecision] = useState(null);
@@ -17,7 +19,7 @@ export default function ToolNodesPage() {
     useEffect(() => {
         fetch('http://localhost:5500/api/getToolGraph')
             .then((res) => res.json())
-            .then((data) => setToolNodes(JSON.parse(data)))
+            .then((data) => setToolNodes(JSON.parse(data))) // Directly set the array
             .catch((err) => console.error('Error fetching tool nodes:', err));
     }, []);
 
@@ -31,14 +33,30 @@ export default function ToolNodesPage() {
             })
             .then((res) => res.json())
             .then((data) => {
-                setToolNodes((prev) => [...prev, data]); // Add new node to the shelf
-                setNewNodeSchema(defaultSchema); // Reset input field
+                setToolNodes((prev) => [...prev, data]); // Add new node to array
+                setNewNodeSchema(defaultSchema);
             })
             .catch((err) => console.error('Error adding tool node:', err));
         } catch (error) {
             console.error('Invalid JSON Schema:', error);
         }
     };
+
+    const handleDeleteNode = (index: number) => {
+        // Remove the node at the given index
+        const updatedToolNodes = toolNodes.filter((_, i) => i !== index);
+        setToolNodes(updatedToolNodes); // Filter out the node by index
+        // Trigger the POST request to update the backend
+        fetch('http://localhost:5500/api/writeToolGraph', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedToolNodes), // Make sure to send the updated array
+        })
+        .then((res) => res.json())
+        .then((data) => console.log('Tool Graph updated:', data))
+        .catch((err) => console.error('Error updating tool graph:', err));
+    };
+    
 
     const handleSendPrompt = () => {
         fetch('http://localhost:5500/api/getFunctionCallDecision', {
@@ -68,27 +86,43 @@ export default function ToolNodesPage() {
                         gap: '1rem',
                         overflowX: 'auto',
                         padding: '0.5rem',
-                    }}
-                >
+                    }}>
                     {toolNodes.map((node, index) => (
-                        <Box
-                            key={index}
+                    <Box
+                        key={index}
+                        sx={{
+                            border: '1px solid #000',
+                            padding: '1rem',
+                            borderRadius: '8px',
+                            minWidth: '250px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            backgroundColor: '#f9f9f9',
+                            position: 'relative', // For positioning the trash icon
+                        }}
+                    >
+                        <Typography variant="subtitle1">Name: {node.function.name}</Typography>
+                        <Typography variant="body1">Description: {node.function.description}</Typography>
+                        <Typography variant="subtitle2">Parameters: {JSON.stringify(node.function.parameters)}</Typography>
+
+                        {/* Trash Can Icon */}
+                        <IconButton
+                            onClick={() => handleDeleteNode(index)}
                             sx={{
-                                border: '1px solid #000',
-                                padding: '1rem',
-                                borderRadius: '8px',
-                                minWidth: '250px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                backgroundColor: '#f9f9f9',
+                                position: 'absolute',
+                                top: '8px',
+                                right: '8px',
+                                backgroundColor: '#fff',
+                                '&:hover': {
+                                    backgroundColor: '#f0f0f0',
+                                },
                             }}
                         >
-                            <Typography variant="subtitle1">Name: {node.function.name}</Typography>
-                            <Typography variant="body1">Description: {node.function.description}</Typography>
-                            <Typography variant="subtitle2">Parameters: {JSON.stringify(node.function.parameters)}</Typography>
-                        </Box>
-                    ))}
+                            <Delete />
+                        </IconButton>
+                    </Box>
+                ))}
                 </Box>
             </Box>
 

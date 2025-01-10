@@ -37,6 +37,7 @@ router.post('/api/generateRenderabl', generateAgent);
 router.post('/api/provideContext', provideContext);
 router.get('/api/getContext', getContext);
 router.get('/api/getToolGraph', getToolGraph);
+router.post('/api/writeToolGraph', writeToolGraph);
 router.post('/api/getFunctionCallDecision', getFunctionCallDecision);
 router.post('/api/writeToolNode', writeToolNodeEndpoint);
 router.post('/api/generateComponent', generateComponentEndpoint);
@@ -101,8 +102,8 @@ function getFunctionCallDecision(req, res) {
 }
 function provideContext(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        const prompt = req.body;
         validateReq(req, res);
+        const prompt = req.body;
         const kvObject = prompt;
         if (!kvObject) {
             return res.status(400).json({ error: "Valid kv-pair object is required" });
@@ -121,6 +122,14 @@ function getToolGraph(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const toolGraph = yield redisClient_1.redisClient.get('toolGraph');
         return res.status(200).json(toolGraph);
+    });
+}
+function writeToolGraph(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        validateReq(req, res);
+        const toolSet = req.body;
+        redisClient_1.redisClient.set("toolGraph", JSON.stringify(toolSet));
+        return res.status(200).json({ message: "Tool graph successfully" });
     });
 }
 function generateAgent(req, res) {

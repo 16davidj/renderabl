@@ -48,6 +48,7 @@ const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
             { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
             { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
             { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
+            { key: 'toolGraph', value: JSON.stringify(toolsSet) },
         ];
         for (const { key, value } of data) {
             yield redisClient_1.redisClient.set(key, value);
@@ -91,7 +92,12 @@ const golfTournamentTool = (0, zod_1.zodFunction)({
         year: zod_2.z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
     }),
 });
-let tools = [chatTool, golfPlayerTool, golfTournamentTool, jobQueryTool];
+let toolsSet = new Set([
+    chatTool,
+    golfPlayerTool,
+    golfTournamentTool,
+    jobQueryTool
+]);
 const app = (0, express_1.default)();
 const port = process.env.SAMPLE_APP_PORT;
 const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -214,7 +220,7 @@ function renderableBe(req, res) {
                     role: "system",
                     content: `You are an agent that determines which function in the tools to call given the user's prompt. Use the entire conversation history for context, but prioritize the last user message for making your decision. If no other function is appropriate, default to calling the "chatAgent" function.`
                 }, prompt[prompt.length - 1]],
-            tools: toolGraph,
+            tools: Array.from(toolGraph),
         });
         const messageResponse = yield agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt);
         return res.status(200).json(messageResponse);

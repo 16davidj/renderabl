@@ -35,6 +35,7 @@ try {
     { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
     { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
     { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
+    //{ key: 'toolGraph', value: JSON.stringify(toolsSet)},
     ];
 
     for (const { key, value } of data) {
@@ -84,8 +85,12 @@ parameters: z.object({
     year: z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
 }),
 });
-let tools: AutoParseableTool<any, any>[] = [chatTool, golfPlayerTool, golfTournamentTool, jobQueryTool];
-
+let toolsSet: Set<AutoParseableTool<any, any>> = new Set([
+  chatTool,
+  golfPlayerTool,
+  golfTournamentTool,
+  jobQueryTool
+]);
 const app = express();
 const port = process.env.SAMPLE_APP_PORT;
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -214,14 +219,14 @@ async function renderableBe(req:Request, res:Response) {
     return res.status(400).json({error: "Prompt is required"});
   }
   const toolGraphJson = await redisClient.get('toolGraph');
-  const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
+  const toolGraph : Set<OpenAI.ChatCompletionTool> = JSON.parse(toolGraphJson);
   const functionCallResponse = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [{
       role: "system",
       content: `You are an agent that determines which function in the tools to call given the user's prompt. Use the entire conversation history for context, but prioritize the last user message for making your decision. If no other function is appropriate, default to calling the "chatAgent" function.`
   }, prompt[prompt.length-1]],
-    tools: toolGraph,
+    tools: Array.from(toolGraph),
   });
   const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt)
   return res.status(200).json(messageResponse);

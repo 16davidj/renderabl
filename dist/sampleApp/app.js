@@ -18,6 +18,7 @@ const react_1 = require("react");
 const personcard_1 = __importDefault(require("./generalcards/personcard"));
 const golfplayercard_1 = __importDefault(require("./golfcards/golfplayercard"));
 const golftournamentcard_1 = __importDefault(require("./golfcards/golftournamentcard"));
+const jobCard_1 = __importDefault(require("./generalcards/jobCard"));
 function App() {
     const [formValue, setFormValue] = (0, react_1.useState)('');
     const [messages, setMessages] = (0, react_1.useState)([]);
@@ -39,6 +40,9 @@ function App() {
         else if (message.cardType === "tournament") {
             return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golftournamentcard_1.default, Object.assign({}, message.golfTournamentCard, { messages: messages, setMessages: setMessages })) }) }));
         }
+        else if (message.cardType === "job" && message.jobContent.length > 0) {
+            return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(jobCard_1.default, { jobs: message.jobContent }) }) }));
+        }
     }
     const newMessage = (s) => __awaiter(this, void 0, void 0, function* () {
         s.preventDefault();
@@ -49,7 +53,7 @@ function App() {
                 cardType: "string"
             }] : messages;
         setMessages(appendMsgs);
-        const response = yield fetch(`http://localhost:5500/api/renderabl`, {
+        const response = yield fetch(`http://localhost:5501/api/renderabl`, {
             method: 'POST',
             mode: 'cors',
             headers: {
