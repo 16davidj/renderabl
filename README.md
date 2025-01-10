@@ -146,3 +146,5 @@ http://localhost:5500/api/provideContext
 If a model is changed in schema.prisma, rerun these two commands:
 
 `npx prisma migrate dev --name init` and `npx prisma generate`
+
+# 1/7/25 Update: to get this fully working, run the infraWebApp backend (frontend optional), and run sampleApp frontend and backend.

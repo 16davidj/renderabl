@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import {OpenAI} from 'openai'
-import { GolfPlayerCardStructure, Message, GolfTournamentCardStructure, PersonCardStructure} from './types'
+import { GolfPlayerCardStructure, Message, GolfTournamentCardStructure, PersonCardStructure, cronJobNamesArray, cellNamesArray, QueryJob, QueryJobSchema, Job} from './types'
 import { GolfPlayerCardProps } from '../sampleApp/golfcards/golfplayercard';
 import { GolfTournamentCardProps } from '../sampleApp/golfcards/golftournamentcard';
 import { PersonCardProps } from '../sampleApp/generalcards/personcard';
@@ -11,6 +11,8 @@ import { connectRedis, redisClient } from '../redis/redisClient';
 import { createSponsorLogoKey, createTourLogoKey } from '../redis/redisUtils';
 import { ZodType, z } from "zod";
 import { AutoParseableTool } from 'openai/lib/parser';
+import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 
@@ -33,7 +35,6 @@ try {
     { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
     { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
     { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
-    { key: 'toolGraph', value: JSON.stringify(tools)}
     ];
 
     for (const { key, value } of data) {
@@ -44,6 +45,12 @@ try {
     console.error('Error pre-warming Redis:', error);
 }
 };
+
+const jobQueryTool : AutoParseableTool<any, any> = zodFunction({
+  name: "jobQueryAgent",
+  description: "Call whenever the prompt indicates we want to query for jobs that are stored in the database.",
+  parameters: QueryJobSchema
+})
 
 const chatTool : AutoParseableTool<any, any> = zodFunction({
 name: "chatAgent",
@@ -77,10 +84,10 @@ parameters: z.object({
     year: z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
 }),
 });
-let tools: AutoParseableTool<any, any>[] = [chatTool, golfPlayerTool, golfTournamentTool];
+let tools: AutoParseableTool<any, any>[] = [chatTool, golfPlayerTool, golfTournamentTool, jobQueryTool];
 
 const app = express();
-const port = process.env.REACT_APP_PORT;
+const port = process.env.SAMPLE_APP_PORT;
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
 
 app.use(express.json())
@@ -98,6 +105,86 @@ preWarmRedis();
 const router = express.Router();
 router.post('/api/renderabl', renderableBe as (req: Request, res: Response) => void);
 app.use(router);
+
+const prisma = new PrismaClient();
+
+const generateRandomInt = (min: number, max: number): number =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
+const generateRandomBoolean = (): boolean => Math.random() < 0.5;
+
+generateCronJobData();
+
+async function generateCronJobData(): Promise<void> {
+  const jobsData = [];
+  cronJobNamesArray.forEach((jobName) => {
+    cellNamesArray.forEach((cellName) => {
+      const job = {
+        id: uuidv4(),
+        name: jobName,
+        cell: cellName,
+        createdAt: new Date().toISOString(),
+        durationMin: generateRandomInt(1, 120),
+        success: generateRandomBoolean(),
+        resourceUsage: generateRandomInt(1, 100) + Math.random(),
+      };
+      jobsData.push(job);
+    });
+  });
+
+  try {
+    const result = await prisma.job.createMany({
+      data: jobsData,
+    });
+    console.log("Batch insert succeeded:", result);
+  } catch (error) {
+    console.error("Error during batch insert:", error);
+  }
+}
+
+async function generateAndRunQuery(queryArgs: QueryJob) {
+  const { filters, sort, limit } = queryArgs;
+
+  // Base query
+  const where: Record<string, any> = {};
+
+  // Apply filters
+  if (filters) {
+    filters.forEach((filter: any) => {
+      const { field, operator, value } = filter;
+      switch (operator) {
+        case "<":
+        case ">":
+          where[field] = { [operator]: value };
+          break;
+        case "before":
+          where[field] = { lt: new Date(value) };
+          break;
+        case "after":
+          where[field] = { gt: new Date(value) };
+          break;
+        case "equals":
+          where[field] = value;
+          break;
+        case "notEquals":
+          where[field] = { not: value };
+          break;
+      }
+    });
+  }
+
+  // Build query
+  const query = {
+    where,
+    orderBy: sort ? { [sort.field]: sort.order } : undefined,
+    take: limit,
+  };
+
+  // Fetch results
+  const jobs : Job[]= await prisma.job.findMany(query);
+  console.log("jobs", JSON.stringify(jobs));
+  return jobs;
+}
 
 async function genericAgent<T extends ZodType>(
     prompt : Message,
@@ -159,6 +246,19 @@ async function personAgent(person : string): Promise<Message> {
   } catch (error) {
     console.error('Error from OpenAI:', error)
   }
+}
+
+export async function jobQueryAgent(args): Promise<Message> {
+  console.log(args)
+  const schema : QueryJob = {filters : args.filters, sort: args.sort, limit: args.limit};
+  const jobsArray = await generateAndRunQuery(schema);
+  const messageResponse : Message = {
+    role: "system",
+    content: "list of data about recent job runs",
+    jobContent: jobsArray,
+    cardType: "job"
+  }
+  return messageResponse;
 }
   
 export async function golfPlayerAgent(args): Promise<Message> {
@@ -283,6 +383,8 @@ async function agentDeciderAndRunner(responseString : string, prompt : Message[]
         return golfPlayerAgent(args); 
       case "golfTournamentAgent":
         return golfTournamentAgent(args);
+      case "jobQueryAgent":
+        return jobQueryAgent(args);
     } 
   }
 }

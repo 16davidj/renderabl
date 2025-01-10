@@ -50,6 +50,33 @@
     overflow-y: auto;
 }
 
+.job-run-card-container {
+    background-color: gray; /* Light gray background */
+    padding: 16px; /* Add some padding around the container */
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Space between cards */
+}
+
+.job-run-card {
+    background-color: white; /* Card background color */
+    border: 1px solid #ddd; /* Light border */
+    border-radius: 8px; /* Rounded corners */
+    padding: 16px; /* Internal padding */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+.job-name {
+    font-size: 1.5rem; /* Make the job name larger */
+    font-weight: bold; /* Make the job name bold */
+    margin-bottom: 8px; /* Space below the name */
+}
+
+.job-detail {
+    font-size: 1rem; /* Standard font size for details */
+    margin: 4px 0; /* Space between details */
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

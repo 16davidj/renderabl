@@ -6,7 +6,7 @@
         "jsx": "react-jsx",
         "module": "CommonJS",
         "moduleResolution": "Node",
-        "outDir": "./dist/sampleApp",
+        "outDir": "./dist",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "allowJs": true,
