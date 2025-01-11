@@ -35,7 +35,7 @@ try {
     { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
     { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
     { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
-    //{ key: 'toolGraph', value: JSON.stringify(toolsSet)},
+    { key: 'toolGraph', value: JSON.stringify(toolsSet)},
     ];
 
     for (const { key, value } of data) {
@@ -78,19 +78,19 @@ parameters: z.object({
 })
 
 const golfTournamentTool : AutoParseableTool<any, any> = zodFunction({
-name: "golfTournamentAgent",
-description: "Get information about a golf tournament's results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
-parameters: z.object({
-    tournament: z.string().describe("The name of the golf tournament to get information on."),
-    year: z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
-}),
+  name: "golfTournamentAgent",
+  description: "Get information about a golf tournament's results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
+  parameters: z.object({
+      tournament: z.string().describe("The name of the golf tournament to get information on."),
+      year: z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
+  }),
 });
-let toolsSet: Set<AutoParseableTool<any, any>> = new Set([
+let toolsSet: AutoParseableTool<any, any>[] = [
   chatTool,
   golfPlayerTool,
   golfTournamentTool,
   jobQueryTool
-]);
+];
 const app = express();
 const port = process.env.SAMPLE_APP_PORT;
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
@@ -228,6 +228,8 @@ async function renderableBe(req:Request, res:Response) {
   }, prompt[prompt.length-1]],
     tools: Array.from(toolGraph),
   });
+  console.log(toolGraph);
+  console.log(JSON.stringify(functionCallResponse));
   const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt)
   return res.status(200).json(messageResponse);
 }

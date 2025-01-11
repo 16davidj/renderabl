@@ -92,12 +92,12 @@ const golfTournamentTool = (0, zod_1.zodFunction)({
         year: zod_2.z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
     }),
 });
-let toolsSet = new Set([
+let toolsSet = [
     chatTool,
     golfPlayerTool,
     golfTournamentTool,
     jobQueryTool
-]);
+];
 const app = (0, express_1.default)();
 const port = process.env.SAMPLE_APP_PORT;
 const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -222,6 +222,8 @@ function renderableBe(req, res) {
                 }, prompt[prompt.length - 1]],
             tools: Array.from(toolGraph),
         });
+        console.log(toolGraph);
+        console.log(JSON.stringify(functionCallResponse));
         const messageResponse = yield agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt);
         return res.status(200).json(messageResponse);
     });

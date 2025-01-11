@@ -87,7 +87,7 @@ export default function ToolNodesPage() {
                         overflowX: 'auto',
                         padding: '0.5rem',
                     }}>
-                    {toolNodes.map((node, index) => (
+                    {toolNodes.length > 0 ? toolNodes.map((node, index) => (
                     <Box
                         key={index}
                         sx={{
@@ -122,7 +122,7 @@ export default function ToolNodesPage() {
                             <Delete />
                         </IconButton>
                     </Box>
-                ))}
+                )) : (<Typography>No tool nodes available</Typography>)}
                 </Box>
             </Box>
 
