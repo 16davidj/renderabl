@@ -8,7 +8,8 @@ sampleApp is a sample chatbot that takes in prompts and responds with UI cards. 
 ![Sample app with golf player cards](./screenshots/playercard.png)
 ![Sample app with golf tournament card](./screenshots/tournamentcard1.png)
 ![Sample app with golf tournament card, continued](./screenshots/tournamentcard2.png)
-
+![Sample app with batch job cards](./screenshots/batchjobcard1.png)
+![Sample app with batch job cards, continued](./screenshots/batchjobcard2.png)
 
 # infraWebApp
 This is a web app for developers to help interact with the Renderabl backend. It's purpose is to allow developers to generate new function call tools, new UI components, and new context KV-entries. This data will all be ingested by the backend when the developer's app when they take in prompts and pass it to the backend, which appropriately determines which developer-provided function to call, and which arguments it should take in.
@@ -147,4 +148,9 @@ If a model is changed in schema.prisma, rerun these two commands:
 
 `npx prisma migrate dev --name init` and `npx prisma generate`
 
-# 1/7/25 Update: to get this fully working, run the infraWebApp backend (frontend optional), and run sampleApp frontend and backend.
+# 1/7/25 Update
+For full functionality, run the infraWebApp backend (frontend optional for developers), and run sampleApp frontend and backend.
+My workflow:
+1. live-server from sampleApp directory
+2. node ./dist/sampleApp/backend.js from sampleApp directory
+3. node ./dist/renderableBe/backend.js from root renderabl directory
