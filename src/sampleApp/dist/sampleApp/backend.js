@@ -212,19 +212,16 @@ function renderableBe(req, res) {
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
-        const toolGraphJson = yield redisClient_1.redisClient.get('toolGraph');
-        const toolGraph = JSON.parse(toolGraphJson);
-        const functionCallResponse = yield openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [{
-                    role: "system",
-                    content: `You are an agent that determines which function in the tools to call given the user's prompt. Use the entire conversation history for context, but prioritize the last user message for making your decision. If no other function is appropriate, default to calling the "chatAgent" function.`
-                }, prompt[prompt.length - 1]],
-            tools: Array.from(toolGraph),
+        const functionCallResponse = yield fetch(`http://localhost:5500/api/getFunctionCallDecision`, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt: prompt[prompt.length - 1].content })
         });
-        console.log(toolGraph);
-        console.log(JSON.stringify(functionCallResponse));
-        const messageResponse = yield agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt);
+        const parsedOutput = yield functionCallResponse.json();
+        const messageResponse = yield agentDeciderAndRunner(parsedOutput, prompt);
         return res.status(200).json(messageResponse);
     });
 }
@@ -253,7 +250,6 @@ function personAgent(person) {
 }
 function jobQueryAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(args);
         const schema = { filters: args.filters, sort: args.sort, limit: args.limit };
         const jobsArray = yield generateAndRunQuery(schema);
         const messageResponse = {
@@ -372,9 +368,8 @@ function chatAgent(args) {
         }
     });
 }
-function agentDeciderAndRunner(responseString, prompt) {
+function agentDeciderAndRunner(response, prompt) {
     return __awaiter(this, void 0, void 0, function* () {
-        const response = JSON.parse(responseString);
         if (!response.choices[0].message.tool_calls) {
             // Default to chat agent if there are no valid function calls. 
             return chatAgent(prompt);

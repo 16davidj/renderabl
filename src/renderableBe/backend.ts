@@ -29,6 +29,7 @@ router.get('/api/getContext', getContext as (req: Request, res: Response) => voi
 router.get('/api/getToolGraph', getToolGraph as (req: Request, res: Response) => void)
 router.post('/api/writeToolGraph', writeToolGraph as (req: Request, res: Response) => void)
 router.post('/api/getFunctionCallDecision', getFunctionCallDecision as (req: Request, res: Response) => void)
+router.post('/api/getFunctionCallDecisionMessage', getFunctionCallDecisionMessage as (req: Request, res: Response) => void)
 router.post('/api/writeToolNode', writeToolNodeEndpoint as (req: Request, res: Response) => void)
 router.post('/api/generateComponent', generateComponentEndpoint as (req: Request, res: Response) => void)
 app.use(router)
@@ -67,15 +68,10 @@ async function writeToolNodeEndpoint(req: Request, res: Response) {
   return res.status(200).json(toolNode);
 }
 
-async function getFunctionCallDecision(req:Request, res:Response) {
-  validateReq(req, res);
+async function getFunctionCallHelper(prompt : Message) {
   const toolGraphJson = await redisClient.get('toolGraph');
   const toolGraph : OpenAI.ChatCompletionTool[] = JSON.parse(toolGraphJson);
-  const prompt : Message = {
-    role: "user",
-    content: req.body.prompt
-  }; 
-  const response = await openai.chat.completions.create({
+  return await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [{
       role: "system",
@@ -83,11 +79,26 @@ async function getFunctionCallDecision(req:Request, res:Response) {
   }, prompt],
     tools: toolGraph,
   });
-  if (!response.choices[0].message.tool_calls) {
+}
+
+async function getFunctionCallDecision(req:Request, res:Response) {
+  validateReq(req, res);
+  const prompt : Message = {
+    role: "user",
+    content: req.body.prompt
+  }; 
+  const decisionResponse = await getFunctionCallHelper(prompt);
+  return res.status(200).json(decisionResponse);
+}
+
+async function getFunctionCallDecisionMessage(req:Request, res:Response) {
+  const response = await getFunctionCallDecision(req, res);
+  const parsedOutput = (await response.json() as unknown) as OpenAI.Chat.Completions.ChatCompletion;
+  if (!parsedOutput.choices[0].message.tool_calls) {
     // Default to chat agent if there are no valid function calls. 
     return res.status(200).json({ message: "No valid function calls found" });
   } else {
-    const toolCall = response.choices[0].message.tool_calls[0];
+    const toolCall = parsedOutput.choices[0].message.tool_calls[0];
     const functionName = toolCall.function.name;
     const args = JSON.parse(toolCall.function.arguments);
     return res.status(200).json({ message: "Function chosen: " + functionName + " with arguments: " + JSON.stringify(args) });

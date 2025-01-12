@@ -218,19 +218,16 @@ async function renderableBe(req:Request, res:Response) {
   if (!prompt) {
     return res.status(400).json({error: "Prompt is required"});
   }
-  const toolGraphJson = await redisClient.get('toolGraph');
-  const toolGraph : Set<OpenAI.ChatCompletionTool> = JSON.parse(toolGraphJson);
-  const functionCallResponse = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [{
-      role: "system",
-      content: `You are an agent that determines which function in the tools to call given the user's prompt. Use the entire conversation history for context, but prioritize the last user message for making your decision. If no other function is appropriate, default to calling the "chatAgent" function.`
-  }, prompt[prompt.length-1]],
-    tools: Array.from(toolGraph),
+  const functionCallResponse = await fetch(`http://localhost:5500/api/getFunctionCallDecision`, {
+    method:'POST',
+    mode: 'cors',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ prompt: prompt[prompt.length-1].content })
   });
-  console.log(toolGraph);
-  console.log(JSON.stringify(functionCallResponse));
-  const messageResponse : Message = await agentDeciderAndRunner(JSON.stringify(functionCallResponse), prompt)
+  const parsedOutput = (await functionCallResponse.json() as unknown) as OpenAI.Chat.Completions.ChatCompletion;
+  const messageResponse : Message = await agentDeciderAndRunner(parsedOutput, prompt)
   return res.status(200).json(messageResponse);
 }
 
@@ -256,7 +253,6 @@ async function personAgent(person : string): Promise<Message> {
 }
 
 export async function jobQueryAgent(args): Promise<Message> {
-  console.log(args)
   const schema : QueryJob = {filters : args.filters, sort: args.sort, limit: args.limit};
   const jobsArray = await generateAndRunQuery(schema);
   const messageResponse : Message = {
@@ -371,8 +367,7 @@ async function chatAgent(args: { messages: Message[]; } | Message[]) : Promise<M
   }
 }
 
-async function agentDeciderAndRunner(responseString : string, prompt : Message[]) : Promise<Message> {
-  const response = JSON.parse(responseString);
+async function agentDeciderAndRunner(response : OpenAI.Chat.Completions.ChatCompletion, prompt : Message[]) : Promise<Message> {
   if (!response.choices[0].message.tool_calls) {
     // Default to chat agent if there are no valid function calls. 
     return chatAgent(prompt);

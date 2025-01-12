@@ -39,6 +39,7 @@ router.get('/api/getContext', getContext);
 router.get('/api/getToolGraph', getToolGraph);
 router.post('/api/writeToolGraph', writeToolGraph);
 router.post('/api/getFunctionCallDecision', getFunctionCallDecision);
+router.post('/api/getFunctionCallDecisionMessage', getFunctionCallDecisionMessage);
 router.post('/api/writeToolNode', writeToolNodeEndpoint);
 router.post('/api/generateComponent', generateComponentEndpoint);
 app.use(router);
@@ -71,16 +72,11 @@ function writeToolNodeEndpoint(req, res) {
         return res.status(200).json(toolNode);
     });
 }
-function getFunctionCallDecision(req, res) {
+function getFunctionCallHelper(prompt) {
     return __awaiter(this, void 0, void 0, function* () {
-        validateReq(req, res);
         const toolGraphJson = yield redisClient_1.redisClient.get('toolGraph');
         const toolGraph = JSON.parse(toolGraphJson);
-        const prompt = {
-            role: "user",
-            content: req.body.prompt
-        };
-        const response = yield openai.chat.completions.create({
+        return yield openai.chat.completions.create({
             model: "gpt-4o",
             messages: [{
                     role: "system",
@@ -88,12 +84,29 @@ function getFunctionCallDecision(req, res) {
                 }, prompt],
             tools: toolGraph,
         });
-        if (!response.choices[0].message.tool_calls) {
+    });
+}
+function getFunctionCallDecision(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        validateReq(req, res);
+        const prompt = {
+            role: "user",
+            content: req.body.prompt
+        };
+        const decisionResponse = yield getFunctionCallHelper(prompt);
+        return res.status(200).json(decisionResponse);
+    });
+}
+function getFunctionCallDecisionMessage(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield getFunctionCallDecision(req, res);
+        const parsedOutput = yield response.json();
+        if (!parsedOutput.choices[0].message.tool_calls) {
             // Default to chat agent if there are no valid function calls. 
             return res.status(200).json({ message: "No valid function calls found" });
         }
         else {
-            const toolCall = response.choices[0].message.tool_calls[0];
+            const toolCall = parsedOutput.choices[0].message.tool_calls[0];
             const functionName = toolCall.function.name;
             const args = JSON.parse(toolCall.function.arguments);
             return res.status(200).json({ message: "Function chosen: " + functionName + " with arguments: " + JSON.stringify(args) });
@@ -129,7 +142,7 @@ function writeToolGraph(req, res) {
         validateReq(req, res);
         const toolSet = req.body;
         redisClient_1.redisClient.set("toolGraph", JSON.stringify(toolSet));
-        return res.status(200).json({ message: "Tool graph successfully" });
+        return res.status(200).json({ message: "Tool graph updated successfully" });
     });
 }
 function generateAgent(req, res) {
