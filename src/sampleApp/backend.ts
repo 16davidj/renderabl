@@ -35,7 +35,6 @@ try {
     { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
     { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
     { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
-    { key: 'toolGraph', value: JSON.stringify(toolsSet)},
     ];
 
     for (const { key, value } of data) {
@@ -47,50 +46,6 @@ try {
 }
 };
 
-const jobQueryTool : AutoParseableTool<any, any> = zodFunction({
-  name: "jobQueryAgent",
-  description: "Call whenever the prompt indicates we want to query for jobs that are stored in the database.",
-  parameters: QueryJobSchema
-})
-
-const chatTool : AutoParseableTool<any, any> = zodFunction({
-name: "chatAgent",
-description: "Default to this whenever the other tools, such as personAgent, are not appropriate. Do not respond to the chat message itself.",
-parameters: z.object({
-    messages: z.array(
-    z.object({
-        role: z.enum(["system", "user", "assistant"]).describe("The role of the sender of the chat message"),
-        content: z.string().describe("The content of the chat message"),
-    })
-    )
-}), 
-})
-
-const golfPlayerTool : AutoParseableTool<any, any> = zodFunction({
-name: "golfPlayerAgent",
-description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player, and maybe from a specific year.",
-parameters: z.object({
-    player: z.string().describe("The name of the golf player to get information on."),
-    year: z.number()
-    .optional()
-    .describe("The year to get information about the golf player. If not specified, leave empty."),
-}),
-})
-
-const golfTournamentTool : AutoParseableTool<any, any> = zodFunction({
-  name: "golfTournamentAgent",
-  description: "Get information about a golf tournament's results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
-  parameters: z.object({
-      tournament: z.string().describe("The name of the golf tournament to get information on."),
-      year: z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
-  }),
-});
-let toolsSet: AutoParseableTool<any, any>[] = [
-  chatTool,
-  golfPlayerTool,
-  golfTournamentTool,
-  jobQueryTool
-];
 const app = express();
 const port = process.env.SAMPLE_APP_PORT;
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})

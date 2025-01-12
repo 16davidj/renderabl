@@ -25,7 +25,6 @@ const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const redisClient_1 = require("../redis/redisClient");
 const redisUtils_1 = require("../redis/redisUtils");
-const zod_2 = require("zod");
 const client_1 = require("@prisma/client");
 const uuid_1 = require("uuid");
 dotenv_1.default.config();
@@ -48,7 +47,6 @@ const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
             { key: 'sponsorlogo:PXG', value: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/PXG_Logo.svg/1280px-PXG_Logo.svg.png' },
             { key: 'sponsorlogo:Nike', value: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png' },
             { key: 'sponsorlogo:Adams', value: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Adams_golf_brand_logo.png' },
-            { key: 'toolGraph', value: JSON.stringify(toolsSet) },
         ];
         for (const { key, value } of data) {
             yield redisClient_1.redisClient.set(key, value);
@@ -59,45 +57,6 @@ const preWarmRedis = () => __awaiter(void 0, void 0, void 0, function* () {
         console.error('Error pre-warming Redis:', error);
     }
 });
-const jobQueryTool = (0, zod_1.zodFunction)({
-    name: "jobQueryAgent",
-    description: "Call whenever the prompt indicates we want to query for jobs that are stored in the database.",
-    parameters: types_1.QueryJobSchema
-});
-const chatTool = (0, zod_1.zodFunction)({
-    name: "chatAgent",
-    description: "Default to this whenever the other tools, such as personAgent, are not appropriate. Do not respond to the chat message itself.",
-    parameters: zod_2.z.object({
-        messages: zod_2.z.array(zod_2.z.object({
-            role: zod_2.z.enum(["system", "user", "assistant"]).describe("The role of the sender of the chat message"),
-            content: zod_2.z.string().describe("The content of the chat message"),
-        }))
-    }),
-});
-const golfPlayerTool = (0, zod_1.zodFunction)({
-    name: "golfPlayerAgent",
-    description: "Get information about a golf player. Call whenever you need to respond to a prompt that asks about a golf player, and maybe from a specific year.",
-    parameters: zod_2.z.object({
-        player: zod_2.z.string().describe("The name of the golf player to get information on."),
-        year: zod_2.z.number()
-            .optional()
-            .describe("The year to get information about the golf player. If not specified, leave empty."),
-    }),
-});
-const golfTournamentTool = (0, zod_1.zodFunction)({
-    name: "golfTournamentAgent",
-    description: "Get information about a golf tournament's results from a specific year. Call whenever you need to respond to a prompt that asks about a golf tournament.",
-    parameters: zod_2.z.object({
-        tournament: zod_2.z.string().describe("The name of the golf tournament to get information on."),
-        year: zod_2.z.number().describe("The year to get information about the golf tournament. If not specified, leave empty."),
-    }),
-});
-let toolsSet = [
-    chatTool,
-    golfPlayerTool,
-    golfTournamentTool,
-    jobQueryTool
-];
 const app = (0, express_1.default)();
 const port = process.env.SAMPLE_APP_PORT;
 const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
