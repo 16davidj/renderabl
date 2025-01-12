@@ -1,5 +1,4 @@
 # renderabl
-prototype
 
 # sampleApp
 
@@ -61,23 +60,27 @@ My workflow:
 
 # API
 ## Example api/generateComponent request
-`{
+```json
+{
     "agentName": "GolfBallAgent",
     "agentProps": "picture_url: string, name: string, summary:string, launch_characteristics:string, spin_characteristics: string, year_introduced:number, firmness:string, players_who_used:string[]",
     "agentDescription": "A chat agent designed to show UI card components about various golf balls. Call whenever you need to respond to a prompt that asks about a golf ball. The input parameters should be the golf ball name"
-}`
+}
+```
 
 ## Example api/writeToolNode request
-`{
+```json
+{
     "agentName": "TrafficAgent",
     "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"handler":{"type":"string"}, "cell":{"type":"string"}}, "required":["handler"], "additionalProperties": false},
     "agentDescription": "An agent designed to show UI card components of monitoring traffic data of a specific endpoint. Call whenever you need to respond to a prompt that asks traffic data given some parameters"
-}`
+}```
 
 You can use Postman, but the infraWebApp also provides a UI wrapper that will call the API.
 
 ## Example api/getFunctionCall request
-`{ \n
+```json
+{
     "prompt": "Tiger Woods 2008"
 }`
 
@@ -88,7 +91,8 @@ http://localhost:5500/api/getContext
 ## Example api/provideContext
 http://localhost:5500/api/provideContext
 
-`{
+```json
+{
   "handler": [
     "SampleEndpoint",
     "GlobalEndpoint",
@@ -121,7 +125,8 @@ http://localhost:5500/api/provideContext
     "FeatureComponent2",
     "FeatureComponent3",
   ]
-}`
+}
+```
 
 # Prisma + SQL
 If a model is changed in schema.prisma, rerun these two commands:
