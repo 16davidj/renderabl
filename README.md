@@ -1,4 +1,14 @@
-# renderabl
+# Elevator pitch
+My original idea was to enable LLM chat-bots (in both enterprise and public domain) to structure their outputs as easily digestible UI components, instead of long text blocks. For example, when a user asks about a golf player, an agent shows a golf player card. In the process of creating these agents, I realized most of the automate-able work was not in generating the UI cards and gathering data to render them. Instead, it was in providing the LLM context on key terms, defining parameter inputs, and assigning roles, so we can trigger business logic (via agents) through prompt understanding.
+
+I set out to create infrastructure that allowed the developer to:
+
+1) Provide the LLM context about certain key terms their prompts should understand. When we’re at work, we commonly use terms that are foreign to the outside world, but easily understandable in the context of our daily workflow.
+
+2) Provide the LLM context about what agents exist, what their purpose is, and what arguments they should parse out of a prompt to pass to business logic.
+
+Our job is to handle prompt-understanding and triggering of business API by providing infrastructure to handle agent creation and management. This allows SaaS developers to transform their existing data and legacy business logic into AI agents, in order to meet user demands in the new AI-driven landscape.
+
 
 # sampleApp
 
