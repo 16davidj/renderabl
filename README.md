@@ -32,13 +32,21 @@ For any styling changes on the sampleApp, run `npx tailwindcss -i ./src/sampleAp
 infraWebApp uses materials UI, not tailwind, so this step is not necessary.
 
 ## Build sampleApp or infraWebApp
-navigate to their respective directories where index.html is located, then run `live-server`
+navigate to their respective directories where index.html is located, then run `live-server`.
 
 Alternatively, I use the VSCode extension "Live Server" so that it's a click away.
 
 # Start servers
 ## Start Redis server (before starting backend server)
 First, start the Redis DB server with `redis-server`, then for the infraWebApp start the backend server with `node ./dist/renderableBe/backend.js`. For the sampleApp, start `node ./dist/sampleApp/backend.js`
+
+# Full functionality
+For full functionality, run the infraWebApp backend (frontend optional for developers), and run sampleApp frontend and backend.
+My workflow:
+1. live-server from sampleApp directory
+2. node ./dist/sampleApp/backend.js from sampleApp directory
+3. node ./dist/renderableBe/backend.js from root renderabl directory
+4. (optional) live-server from infraWebApp directory to access/view the developer web app.
 
 # Directory breakdown
 `src/sampleApp/generalcards` contains .tsx UI cards that I was experimenting with before I narrowed down to the golf vertical for the MVP.
@@ -61,7 +69,7 @@ First, start the Redis DB server with `redis-server`, then for the infraWebApp s
 
 ## Example api/writeToolNode request
 {
-    "agentName": "TraficAgent",
+    "agentName": "TrafficAgent",
     "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"handler":{"type":"string"}, "cell":{"type":"string"}}, "required":["handler"], "additionalProperties": false},
     "agentDescription": "An agent designed to show UI card components of monitoring traffic data of a specific endpoint. Call whenever you need to respond to a prompt that asks traffic data given some parameters"
 }
@@ -87,13 +95,6 @@ http://localhost:5500/api/provideContext
     "FeatureEndpoint1",
     "FeatureEndpoint2",
     "FeatureEndpoint3",
-    "FeatureEndpoint4",
-    "FeatureEndpoint5",
-    "FeatureEndpoint6",
-    "FeatureEndpoint7",
-    "FeatureEndpoint8",
-    "FeatureEndpoint9",
-    "FeatureEndpoint10"
   ],
   "node": [
     "global-config",
@@ -103,13 +104,6 @@ http://localhost:5500/api/provideContext
     "FeatureNode1",
     "FeatureNode2",
     "FeatureNode3",
-    "FeatureNode4",
-    "FeatureNode5",
-    "FeatureNode6",
-    "FeatureNode7",
-    "FeatureNode8",
-    "FeatureNode9",
-    "FeatureNode10"
   ],
   "cell": [
     "qs",
@@ -119,13 +113,6 @@ http://localhost:5500/api/provideContext
     "FeatureCell1",
     "FeatureCell2",
     "FeatureCell3",
-    "FeatureCell4",
-    "FeatureCell5",
-    "FeatureCell6",
-    "FeatureCell7",
-    "FeatureCell8",
-    "FeatureCell9",
-    "FeatureCell10"
   ],
   "component": [
     "feature1",
@@ -133,13 +120,6 @@ http://localhost:5500/api/provideContext
     "FeatureComponent1",
     "FeatureComponent2",
     "FeatureComponent3",
-    "FeatureComponent4",
-    "FeatureComponent5",
-    "FeatureComponent6",
-    "FeatureComponent7",
-    "FeatureComponent8",
-    "FeatureComponent9",
-    "FeatureComponent10"
   ]
 }
 
@@ -147,10 +127,3 @@ http://localhost:5500/api/provideContext
 If a model is changed in schema.prisma, rerun these two commands:
 
 `npx prisma migrate dev --name init` and `npx prisma generate`
-
-# 1/7/25 Update
-For full functionality, run the infraWebApp backend (frontend optional for developers), and run sampleApp frontend and backend.
-My workflow:
-1. live-server from sampleApp directory
-2. node ./dist/sampleApp/backend.js from sampleApp directory
-3. node ./dist/renderableBe/backend.js from root renderabl directory
