@@ -77,9 +77,9 @@ My workflow:
 You can use Postman, but the infraWebApp also provides a UI wrapper that will call the API.
 
 ## Example api/getFunctionCall request
-{
+`{
     "prompt": "Tiger Woods 2008"
-}
+}`
 
 ## Getters
 http://localhost:5500/api/getToolGraph
