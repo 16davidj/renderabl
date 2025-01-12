@@ -74,7 +74,8 @@ My workflow:
     "agentName": "TrafficAgent",
     "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"handler":{"type":"string"}, "cell":{"type":"string"}}, "required":["handler"], "additionalProperties": false},
     "agentDescription": "An agent designed to show UI card components of monitoring traffic data of a specific endpoint. Call whenever you need to respond to a prompt that asks traffic data given some parameters"
-}```
+}
+```
 
 You can use Postman, but the infraWebApp also provides a UI wrapper that will call the API.
 
@@ -82,7 +83,8 @@ You can use Postman, but the infraWebApp also provides a UI wrapper that will ca
 ```json
 {
     "prompt": "Tiger Woods 2008"
-}`
+}
+```
 
 ## Getters
 http://localhost:5500/api/getToolGraph
