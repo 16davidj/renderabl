@@ -14,62 +14,23 @@ function App() {
     function renderContent(message: Message) {
         switch (message.cardType) {
             case "string":
-              return (
-                <div className="flex">
-                  {message.role === 'user' ? (
-                    <p className={`message ${message.role} inline-block mt-8 p-2 mr-4`}>{message.content}</p>
-                  ) : (
-                    <p className={`message ${message.role} inline-block mt-8 p-4`}>{message.content}</p>
-                  )}
-                </div>
-              );
+                if (message.role === 'user') {
+                    return (<div className="flex flex-row-reverse"><p className={"message " + message.role + " inline-block mt-8 p-2 mr-4"}>{message.content}</p></div>)
+                } else {
+                    return (<div className="flex"><p className={"message " + message.role + " inline-block mt-8 p-4"}>{message.content}</p></div>)
+                }
             case "person":
-              return (
-                <div className="flex justify-start">
-                  <p className="inline-block mt-8 p-4">
-                    <PersonCard {...message.personCard} />
-                  </p>
-                </div>
-              );
+                return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><PersonCard {...message.personCard}/></p></div>)
             case "player":
-              return (
-                <div className="flex justify-start">
-                  <p className="inline-block mt-8 p-4">
-                    <GolfPlayerCard {...message.golfPlayerCard} messages={messages} setMessages={setMessages} />
-                  </p>
-                </div>
-              );
+                return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfPlayerCard {...message.golfPlayerCard} messages={messages} setMessages={setMessages}/></p></div>)
             case "tournament":
-              return (
-                <div className="flex justify-start">
-                  <p className="inline-block mt-8 p-4">
-                    <GolfTournamentCard {...message.golfTournamentCard} messages={messages} setMessages={setMessages} />
-                  </p>
-                </div>
-              );
+                return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfTournamentCard {...message.golfTournamentCard} messages={messages} setMessages={setMessages}/></p></div>)
             case "job":
-              if (message.jobContent && message.jobContent.length > 0) {
-                return (
-                  <div className="flex justify-start">
-                    <p className="inline-block mt-8 p-4">
-                      <JobRunCard jobs={message.jobContent} />
-                    </p>
-                  </div>
-                );
-              }
-              break;
+                return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><JobRunCard jobs={message.jobContent}/></p></div>)
             case "ball":
-              return (
-                <div className="flex justify-start">
-                  <p className="inline-block mt-8 p-4">
-                    <GolfBallCard {...message.golfBallCard} />
-                  </p>
-                </div>
-              );
-            default:
-              return null;
-          }
-        }        
+                return (<div className="flex justify-start"><p className="inline-block mt-8 p-4"><GolfBallCard {...message.golfBallCard}/></p></div>)
+        }
+    }        
 
     const newMessage: React.FormEventHandler = async(s) => {
         s.preventDefault()

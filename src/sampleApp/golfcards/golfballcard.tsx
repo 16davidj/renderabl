@@ -37,16 +37,16 @@ const GolfBallCard: React.FC<GolfBallCardProps> = ({
       </div>
 
       <div className="p-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 mb-2">
           <strong>Summary:</strong> {summary}
         </p>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 mb-2">
           <strong>Launch Characteristics:</strong> {launch}
         </p>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 mb-2">
           <strong>Spin Characteristics:</strong> {spin}
         </p>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 mb-2">
           <strong>Firmness:</strong> {firmness}
         </p>
       </div>
