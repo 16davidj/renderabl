@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QueryJobSchema = exports.cellNamesArray = exports.cronJobNamesArray = exports.GolfTournamentCardStructure = exports.GolfPlayerCardStructure = exports.PersonCardStructure = void 0;
+exports.QueryJobSchema = exports.cellNamesArray = exports.cronJobNamesArray = exports.GolfBallStructure = exports.GolfTournamentCardStructure = exports.GolfPlayerCardStructure = exports.PersonCardStructure = void 0;
 const zod_1 = require("zod");
 exports.PersonCardStructure = zod_1.z.object({
     name: zod_1.z.string(),
@@ -46,6 +46,15 @@ exports.GolfTournamentCardStructure = zod_1.z.object({
     purse: zod_1.z.number(),
     players: zod_1.z.array(PlayerScore).describe("The top 10 players from the tournament."),
     year: zod_1.z.number(),
+});
+exports.GolfBallStructure = zod_1.z.object({
+    name: zod_1.z.string(),
+    summary: zod_1.z.string(),
+    launch: zod_1.z.string().describe("Launch characteristics of this golf ball."),
+    spin: zod_1.z.string().describe("Spin characteristics of this golf ball"),
+    firmness: zod_1.z.string().describe("Firmness of this golf ball"),
+    year_introduced: zod_1.z.number(),
+    players: zod_1.z.array(zod_1.z.string()).describe("The players that used this golf ball"),
 });
 // Array of all cronJobNames
 exports.cronJobNamesArray = [

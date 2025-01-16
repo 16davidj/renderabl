@@ -74,8 +74,8 @@ export const generateToolNode = async (agentName : string, agentDescription : st
     console.error("Could not get agent relevant context from agent properties: ", error);
   }
 
-  const description = agentDescription + "For context, the parameters specified for the function call can take in the following values:"
-   + JSON.stringify(agentRelevantContext) + ". You can also use these values as a signal that this function could be called.";
+  const description = Object.keys(agentRelevantContext).length > 0 ? agentDescription + "For context, the parameters specified for the function call can take in the following values:"
+   + JSON.stringify(agentRelevantContext) + ". You can also use these values as a signal that this function could be called." : agentDescription;
 
   let tool : AutoParseableTool<any, any> = makeParseableTool<any>(
     {

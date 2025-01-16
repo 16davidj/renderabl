@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.jobQueryAgent = jobQueryAgent;
 exports.golfPlayerAgent = golfPlayerAgent;
 exports.golfTournamentAgent = golfTournamentAgent;
+exports.golfBallAgent = golfBallAgent;
 exports.getPictureUrl = getPictureUrl;
 exports.getYouTubeVodId = getYouTubeVodId;
 const express_1 = __importDefault(require("express"));
@@ -294,6 +295,34 @@ function golfTournamentAgent(args) {
         }
     });
 }
+function golfBallAgent(args) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let ball = args.ball;
+        if (!args.ball) {
+            console.error("Golf ball name is required");
+            return;
+        }
+        try {
+            const agentDescription = "You are a helpful assistant that gathers information about a specific golf ball.";
+            const prompt = { role: "user", content: ball };
+            const [response, ballPictureUrl] = yield Promise.all([genericAgent(prompt, types_1.GolfBallStructure, agentDescription),
+                getPictureUrl(ball, 0.9)
+            ]);
+            const props = JSON.parse(response);
+            props.picture_url = ballPictureUrl;
+            const messageResponse = {
+                role: "system",
+                content: "chat response with a UI card about a type of golf ball",
+                golfBallCard: props,
+                cardType: "ball"
+            };
+            return messageResponse;
+        }
+        catch (error) {
+            console.error('Error from OpenAI:', error);
+        }
+    });
+}
 function chatAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
         let prompt;
@@ -349,6 +378,8 @@ function agentDeciderAndRunner(response, prompt) {
                     return golfTournamentAgent(args);
                 case "jobQueryAgent":
                     return jobQueryAgent(args);
+                case "golfBallAgent":
+                    return golfBallAgent(args);
             }
         }
     });

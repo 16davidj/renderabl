@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PersonCardProps } from "./generalcards/personcard";
 import { GolfTournamentCardProps } from "./golfcards/golftournamentcard";
 import { GolfPlayerCardProps } from "./golfcards/golfplayercard";
+import { GolfBallCardProps } from "./golfcards/golfballcard";
 
 export type MonitoringGraphProps = {
     handlerName: string;
@@ -17,10 +18,11 @@ export type Message = {
     content: string,
     personCard ?: PersonCardProps,
     golfPlayerCard ?: GolfPlayerCardProps,
+    golfBallCard ?: GolfBallCardProps,
     graph ?: MonitoringGraphProps,
     golfTournamentCard ?: GolfTournamentCardProps,
     jobContent?: Job[],
-    cardType ?: 'person' | 'string' | 'graph' | 'player' | 'tournament' | 'job'
+    cardType ?: 'person' | 'string' | 'graph' | 'player' | 'tournament' | 'job' | 'ball'
 }
 
 export const PersonCardStructure = z.object({
@@ -72,6 +74,16 @@ export const GolfTournamentCardStructure = z.object({
   purse: z.number(),
   players: z.array(PlayerScore).describe("The top 10 players from the tournament."),
   year: z.number(),
+})
+
+export const GolfBallStructure = z.object({
+  name: z.string(),
+  summary: z.string(),
+  launch: z.string().describe("Launch characteristics of this golf ball."),
+  spin: z.string().describe("Spin characteristics of this golf ball"),
+  firmness: z.string().describe("Firmness of this golf ball"),
+  year_introduced: z.number(),
+  players: z.array(z.string()).describe("The players that used this golf ball"),
 })
 
 export type CronJobNames = 

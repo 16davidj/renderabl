@@ -84,8 +84,8 @@ const generateToolNode = (agentName, agentDescription, agentArgs, contextDataJso
     catch (error) {
         console.error("Could not get agent relevant context from agent properties: ", error);
     }
-    const description = agentDescription + "For context, the parameters specified for the function call can take in the following values:"
-        + JSON.stringify(agentRelevantContext) + ". You can also use these values as a signal that this function could be called.";
+    const description = Object.keys(agentRelevantContext).length > 0 ? agentDescription + "For context, the parameters specified for the function call can take in the following values:"
+        + JSON.stringify(agentRelevantContext) + ". You can also use these values as a signal that this function could be called." : agentDescription;
     let tool = (0, parser_1.makeParseableTool)({
         type: 'function',
         function: Object.assign({ name: agentName, parameters: agentArgs, 

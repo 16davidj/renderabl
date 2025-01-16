@@ -1,8 +1,9 @@
 import express, {Request, Response} from 'express';
 import {OpenAI} from 'openai'
-import { GolfPlayerCardStructure, Message, GolfTournamentCardStructure, PersonCardStructure, cronJobNamesArray, cellNamesArray, QueryJob, QueryJobSchema, Job} from './types'
+import { GolfPlayerCardStructure, GolfBallStructure, Message, GolfTournamentCardStructure, PersonCardStructure, cronJobNamesArray, cellNamesArray, QueryJob, QueryJobSchema, Job} from './types'
 import { GolfPlayerCardProps } from '../sampleApp/golfcards/golfplayercard';
 import { GolfTournamentCardProps } from '../sampleApp/golfcards/golftournamentcard';
+import { GolfBallCardProps } from './golfcards/golfballcard';
 import { PersonCardProps } from '../sampleApp/generalcards/personcard';
 import { zodResponseFormat, zodFunction } from "openai/helpers/zod";
 import cors from 'cors'
@@ -292,6 +293,35 @@ export async function golfTournamentAgent(args): Promise<Message> {
     }
 }
 
+export async function golfBallAgent(args): Promise<Message> {
+  let ball : string = args.ball;
+  
+  if(!args.ball) {
+    console.error("Golf ball name is required");
+    return;
+  }
+
+  try {
+    const agentDescription : string = "You are a helpful assistant that gathers information about a specific golf ball.";
+    const prompt : Message = { role: "user", content: ball };
+    const [response, ballPictureUrl] = await Promise.all([genericAgent(
+        prompt, GolfBallStructure, agentDescription),
+        getPictureUrl(ball, 0.9)
+    ]);
+    const props : GolfBallCardProps = JSON.parse(response);
+    props.picture_url = ballPictureUrl;
+    const messageResponse : Message = {
+      role: "system",
+      content: "chat response with a UI card about a type of golf ball",
+      golfBallCard: props,
+      cardType: "ball"
+    }
+    return messageResponse;
+    } catch (error) {
+      console.error('Error from OpenAI:', error)
+    }
+}
+
 async function chatAgent(args: { messages: Message[]; } | Message[]) : Promise<Message> {
   let prompt : Message[];
   if (args instanceof Array) {
@@ -342,6 +372,8 @@ async function agentDeciderAndRunner(response : OpenAI.Chat.Completions.ChatComp
         return golfTournamentAgent(args);
       case "jobQueryAgent":
         return jobQueryAgent(args);
+      case "golfBallAgent":
+        return golfBallAgent(args);
     } 
   }
 }

@@ -19,29 +19,29 @@ const personcard_1 = __importDefault(require("./generalcards/personcard"));
 const golfplayercard_1 = __importDefault(require("./golfcards/golfplayercard"));
 const golftournamentcard_1 = __importDefault(require("./golfcards/golftournamentcard"));
 const jobCard_1 = __importDefault(require("./generalcards/jobCard"));
+const golfballcard_1 = __importDefault(require("./golfcards/golfballcard"));
 function App() {
     const [formValue, setFormValue] = (0, react_1.useState)('');
     const [messages, setMessages] = (0, react_1.useState)([]);
     function renderContent(message) {
-        if (message.cardType === "string") {
-            if (message.role === 'user') {
-                return ((0, jsx_runtime_1.jsx)("div", { className: "flex flex-row-reverse", children: (0, jsx_runtime_1.jsx)("p", { className: "message " + message.role + " inline-block mt-8 p-2 mr-4", children: message.content }) }));
-            }
-            else {
-                return ((0, jsx_runtime_1.jsx)("div", { className: "flex", children: (0, jsx_runtime_1.jsx)("p", { className: "message " + message.role + " inline-block mt-8 p-4", children: message.content }) }));
-            }
-        }
-        else if (message.cardType === "person") {
-            return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(personcard_1.default, Object.assign({}, message.personCard)) }) }));
-        }
-        else if (message.cardType === "player") {
-            return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golfplayercard_1.default, Object.assign({}, message.golfPlayerCard, { messages: messages, setMessages: setMessages })) }) }));
-        }
-        else if (message.cardType === "tournament") {
-            return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golftournamentcard_1.default, Object.assign({}, message.golfTournamentCard, { messages: messages, setMessages: setMessages })) }) }));
-        }
-        else if (message.cardType === "job" && message.jobContent.length > 0) {
-            return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(jobCard_1.default, { jobs: message.jobContent }) }) }));
+        switch (message.cardType) {
+            case "string":
+                return ((0, jsx_runtime_1.jsx)("div", { className: "flex", children: message.role === 'user' ? ((0, jsx_runtime_1.jsx)("p", { className: `message ${message.role} inline-block mt-8 p-2 mr-4`, children: message.content })) : ((0, jsx_runtime_1.jsx)("p", { className: `message ${message.role} inline-block mt-8 p-4`, children: message.content })) }));
+            case "person":
+                return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(personcard_1.default, Object.assign({}, message.personCard)) }) }));
+            case "player":
+                return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golfplayercard_1.default, Object.assign({}, message.golfPlayerCard, { messages: messages, setMessages: setMessages })) }) }));
+            case "tournament":
+                return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golftournamentcard_1.default, Object.assign({}, message.golfTournamentCard, { messages: messages, setMessages: setMessages })) }) }));
+            case "job":
+                if (message.jobContent && message.jobContent.length > 0) {
+                    return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(jobCard_1.default, { jobs: message.jobContent }) }) }));
+                }
+                break;
+            case "ball":
+                return ((0, jsx_runtime_1.jsx)("div", { className: "flex justify-start", children: (0, jsx_runtime_1.jsx)("p", { className: "inline-block mt-8 p-4", children: (0, jsx_runtime_1.jsx)(golfballcard_1.default, Object.assign({}, message.golfBallCard)) }) }));
+            default:
+                return null;
         }
     }
     const newMessage = (s) => __awaiter(this, void 0, void 0, function* () {
