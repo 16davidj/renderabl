@@ -99,9 +99,14 @@ function getFunctionCallDecision(req, res) {
 }
 function getFunctionCallDecisionMessage(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        const response = yield getFunctionCallDecision(req, res);
-        const parsedOutput = yield response.json();
-        if (!parsedOutput.choices[0].message.tool_calls) {
+        validateReq(req, res);
+        const prompt = {
+            role: "user",
+            content: req.body.prompt
+        };
+        const decisionResponse = yield getFunctionCallHelper(prompt);
+        const parsedOutput = decisionResponse;
+        if (parsedOutput.choices.length === 0 || !parsedOutput.choices[0].message.tool_calls) {
             // Default to chat agent if there are no valid function calls. 
             return res.status(200).json({ message: "No valid function calls found" });
         }

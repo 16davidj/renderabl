@@ -92,9 +92,14 @@ async function getFunctionCallDecision(req:Request, res:Response) {
 }
 
 async function getFunctionCallDecisionMessage(req:Request, res:Response) {
-  const response = await getFunctionCallDecision(req, res);
-  const parsedOutput = (await response.json() as unknown) as OpenAI.Chat.Completions.ChatCompletion;
-  if (!parsedOutput.choices[0].message.tool_calls) {
+  validateReq(req, res);
+  const prompt : Message = {
+    role: "user",
+    content: req.body.prompt
+  }; 
+  const decisionResponse = await getFunctionCallHelper(prompt);
+  const parsedOutput = decisionResponse as OpenAI.Chat.Completions.ChatCompletion;
+  if (parsedOutput.choices.length === 0 || !parsedOutput.choices[0].message.tool_calls) {
     // Default to chat agent if there are no valid function calls. 
     return res.status(200).json({ message: "No valid function calls found" });
   } else {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Button, TextField, Typography, Container, IconButton } from '@mui/material';
 import { Delete } from '@mui/icons-material'; // Import Material-UI's Delete icon
 import OpenAI from 'openai';
+import { CircularProgress } from '@mui/material'; // Import the loading spinner
 
 const defaultSchema = `{
     "agentName": "SampleAgent",
@@ -14,6 +15,9 @@ export default function ToolNodesPage() {
     const [newNodeSchema, setNewNodeSchema] = useState(defaultSchema);
     const [prompt, setPrompt] = useState('');
     const [decision, setDecision] = useState(null);
+    const [isLoadingAddNode, setIsLoadingAddNode] = useState(false);
+    const [isLoadingPrompt, setIsLoadingPrompt] = useState(false);
+    const [addNodeError, setAddNodeError] = useState<string | null>(null);
 
     // Fetch existing tool nodes on page load
     useEffect(() => {
@@ -23,22 +27,29 @@ export default function ToolNodesPage() {
             .catch((err) => console.error('Error fetching tool nodes:', err));
     }, []);
 
-    const handleAddNode = () => {
+    const handleAddNode = async () => {
         try {
+            setIsLoadingAddNode(true);
+            setAddNodeError(null); // Clear any previous error message
             const schema = JSON.parse(newNodeSchema);
-            fetch('http://localhost:5500/api/writeToolNode', {
+            const res = await fetch('http://localhost:5500/api/writeToolNode', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(schema),
-            })
-            .then((res) => res.json())
-            .then((data) => {
-                setToolNodes((prev) => [...prev, data]); // Add new node to array
-                setNewNodeSchema(defaultSchema);
-            })
-            .catch((err) => console.error('Error adding tool node:', err));
-        } catch (error) {
-            console.error('Invalid JSON Schema:', error);
+            });
+    
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message);
+            }
+    
+            const data = await res.json();
+            setToolNodes((prev) => [...prev, data]);
+            setNewNodeSchema(defaultSchema);
+        } catch (error: any) {
+            setAddNodeError(error.message);
+        } finally {
+            setIsLoadingAddNode(false);
         }
     };
 
@@ -58,15 +69,21 @@ export default function ToolNodesPage() {
     };
     
 
-    const handleSendPrompt = () => {
-        fetch('http://localhost:5500/api/getFunctionCallDecision', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: prompt }),
-        })
-        .then((res) => res.json())
-        .then((data) => setDecision(data))
-        .catch((err) => console.error('Error sending prompt:', err));
+    const handleSendPrompt = async () => {
+        try {
+            setIsLoadingPrompt(true);
+            const res = await fetch('http://localhost:5500/api/getFunctionCallDecisionMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt }),
+            });
+            const data = await res.json();
+            setDecision(data);
+        } catch (error) {
+            console.error('Error sending prompt:', error);
+        } finally {
+            setIsLoadingPrompt(false);
+        }
     };
 
     return (
@@ -145,9 +162,15 @@ export default function ToolNodesPage() {
                         color="primary"
                         onClick={handleAddNode}
                         style={{ marginTop: '1rem' }}
+                        disabled={isLoadingAddNode}
                     >
-                        Add Node
+                    {isLoadingAddNode ? <CircularProgress size={24} /> : 'Add Node'}
                     </Button>
+                    {addNodeError && (
+                        <Typography color="error" sx={{ marginTop: '0.5rem' }}>
+                            {addNodeError}
+                        </Typography>
+                    )}
                 </Box>
 
                 {/* Prompt Input */}
@@ -167,8 +190,9 @@ export default function ToolNodesPage() {
                         color="primary"
                         onClick={handleSendPrompt}
                         style={{ marginTop: '1rem' }}
+                        disabled={isLoadingPrompt} // Disable button during loading
                     >
-                        Send
+                    {isLoadingPrompt ? <CircularProgress size={24} /> : 'Send'}
                     </Button>
 
                     {/* Decision Output */}
