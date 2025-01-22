@@ -52,10 +52,10 @@ First, start the Redis DB server with `redis-server`, then for the infraWebApp s
 # Full functionality
 For full functionality, run the infraWebApp backend (frontend optional for developers), and run sampleApp frontend and backend.
 My workflow:
-1. live-server from sampleApp directory
+1. live-server from sampleApp/dist directory
 2. node ./dist/sampleApp/backend.js from sampleApp directory
 3. node ./dist/renderableBe/backend.js from root renderabl directory
-4. (optional) live-server from infraWebApp directory to access/view the developer web app.
+4. (optional) live-server from infraWebApp/dist directory to access/view the developer web app.
 
 # Directory breakdown
 `src/sampleApp/generalcards` contains .tsx UI cards that I was experimenting with before I narrowed down to the golf vertical for the MVP.
