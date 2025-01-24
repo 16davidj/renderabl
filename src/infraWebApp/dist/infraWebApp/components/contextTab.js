@@ -116,7 +116,7 @@ function ContextTab() {
             setLoading(false); // Set loading state to false after the request is done
         });
     };
-    return ((0, jsx_runtime_1.jsxs)(material_1.Container, { maxWidth: "md", style: { marginTop: '2rem' }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h4", gutterBottom: true, children: "Context Data" }), [...tempData.entries()].map(([key, value], keyIndex) => ((0, jsx_runtime_1.jsxs)(material_1.Box, { sx: {
+    return ((0, jsx_runtime_1.jsxs)(material_1.Container, { maxWidth: "xl", style: { marginTop: '2rem' }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h4", gutterBottom: true, children: "Context Data" }), [...tempData.entries()].map(([key, value], keyIndex) => ((0, jsx_runtime_1.jsxs)(material_1.Box, { sx: {
                     marginBottom: '1rem',
                     borderBottom: '1px solid #ccc',
                     paddingBottom: '1rem',

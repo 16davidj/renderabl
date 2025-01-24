@@ -108,7 +108,7 @@ export default function ContextTab() {
     };
 
     return (
-        <Container maxWidth="md" style={{ marginTop: '2rem' }}>
+        <Container maxWidth="xl" style={{ marginTop: '2rem' }}>
             <Typography variant="h4" gutterBottom>
                 Context Data
             </Typography>

@@ -3,6 +3,7 @@ import { Box, Button, TextField, Typography, Container, IconButton } from '@mui/
 import { Delete } from '@mui/icons-material'; // Import Material-UI's Delete icon
 import OpenAI from 'openai';
 import { CircularProgress } from '@mui/material'; // Import the loading spinner
+import ReactJsonPrettify from 'react-json-prettify';
 
 const defaultSchema = `{
     "agentName": "SampleAgent",
@@ -18,6 +19,7 @@ export default function ToolNodesPage() {
     const [isLoadingAddNode, setIsLoadingAddNode] = useState(false);
     const [isLoadingPrompt, setIsLoadingPrompt] = useState(false);
     const [addNodeError, setAddNodeError] = useState<string | null>(null);
+    const [feedbackGiven, setFeedbackGiven] = useState(false);
 
     // Fetch existing tool nodes on page load
     useEffect(() => {
@@ -26,6 +28,22 @@ export default function ToolNodesPage() {
             .then((data) => setToolNodes(JSON.parse(data))) // Directly set the array
             .catch((err) => console.error('Error fetching tool nodes:', err));
     }, []);
+
+    const handleFeedback = (type: 'up' | 'down') => {
+        console.log(`Feedback given: ${type}`);
+        // TODO: Handle the feedback logic here, e.g., send it to an API or update state
+        setFeedbackGiven(true);
+    };
+
+    const JsonSchemaViewer = (schema: string) => {
+        const parsedSchema = JSON.parse(schema);
+    
+        return (
+            <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
+                <ReactJsonPrettify json={parsedSchema}/>
+            </div>
+        );
+    };
 
     const handleAddNode = async () => {
         try {
@@ -83,11 +101,12 @@ export default function ToolNodesPage() {
             console.error('Error sending prompt:', error);
         } finally {
             setIsLoadingPrompt(false);
+            setFeedbackGiven(false);
         }
     };
 
     return (
-        <Container maxWidth="lg" style={{ marginTop: '2rem' }}>
+        <Container maxWidth="xl" style={{ marginTop: '2rem' }}>
             <Typography variant="h4" gutterBottom>
                 Tool Nodes Interface
             </Typography>
@@ -111,17 +130,25 @@ export default function ToolNodesPage() {
                             border: '1px solid #000',
                             padding: '1rem',
                             borderRadius: '8px',
-                            minWidth: '250px',
+                            minWidth: '550px',
                             display: 'flex',
                             flexDirection: 'column',
-                            justifyContent: 'space-between',
+                            gap: '0.5rem',
+                            justifyContent: 'flex-start',
                             backgroundColor: '#f9f9f9',
-                            position: 'relative', // For positioning the trash icon
+                            position: 'relative',
                         }}
                     >
                         <Typography variant="subtitle1">Name: {node.function.name}</Typography>
                         <Typography variant="body1">Description: {node.function.description}</Typography>
-                        <Typography variant="subtitle2">Parameters: {JSON.stringify(node.function.parameters)}</Typography>
+                        <Typography
+                            variant="subtitle2"
+                            sx={{
+                                maxHeight: '300px',
+                                overflowY: 'auto', // Enable scrolling if content exceeds maxHeight
+                                paddingRight: '8px', // Optional, to prevent scroll bar from overlapping text
+                            }}
+                        >Parameters: {JsonSchemaViewer(JSON.stringify(node.function.parameters))}</Typography>
 
                         {/* Trash Can Icon */}
                         <IconButton
@@ -197,10 +224,38 @@ export default function ToolNodesPage() {
 
                     {/* Decision Output */}
                     {decision && (
-                        <Box sx={{ marginTop: '1rem' }}>
+                        <Box sx={{ marginTop: '1rem', flexShrink: 0}}>
                             <Typography variant="h6">Decision:</Typography>
                             <pre>{JSON.stringify(decision, null, 2)}</pre>
+                            {/* Feedback Buttons */}
+                            <Box sx={{ marginTop: '1rem',
+                                maxWidth: '100%',
+                                width: '100%',
+                             }}>
+                            {feedbackGiven ? (
+                                <Typography color="primary" variant="body1">
+                                    Thank you for your feedback!
+                                </Typography>
+                            ) : (
+                                <Box sx={{ display: 'flex', gap: '1rem' }}>
+                                    <Button
+                                        variant="contained"
+                                        color="success"
+                                        onClick={() => handleFeedback('up')}
+                                    >
+                                        👍 Correct
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        color="error"
+                                        onClick={() => handleFeedback('down')}
+                                    >
+                                        👎 Wrong tool
+                                    </Button>
+                                </Box>
+                            )}
                         </Box>
+                    </Box>
                     )}
                 </Box>
             </Box>
