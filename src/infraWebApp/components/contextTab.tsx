@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button, TextField, Container, Box, Typography, IconButton, CircularProgress, Snackbar } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { Delete } from '@mui/icons-material'; // Import Material-UI's Delete icon
 
 async function getContextData(): Promise<string> {
     const response = await fetch(`http://localhost:5500/api/getContext`, {
@@ -139,8 +139,13 @@ export default function ContextTab() {
                         onChange={(e) => changeValue(key, e.target.value)} 
                         fullWidth
                     />
-                    <IconButton color="secondary" onClick={() => deleteKvPair(key)}>
-                        <DeleteIcon />
+                    <IconButton sx={{
+                                backgroundColor: '#fff',
+                                '&:hover': {
+                                    backgroundColor: '#f0f0f0',
+                                },
+                            }} onClick={() => deleteKvPair(key)}>
+                        <Delete />
                     </IconButton>
                 </Box>
             ))}

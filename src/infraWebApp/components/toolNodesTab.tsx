@@ -11,6 +11,36 @@ const defaultSchema = `{
     "agentDescription": "Insert description here"
 }`;
 
+interface DecisionProps {
+    decision: {
+      functionName: string;
+      args: Record<string, any>;
+    };
+}
+
+const DecisionDisplay: React.FC<DecisionProps> = ({ decision }) => {
+    const { functionName, args } = decision;  
+    return (
+      <Box>
+        <Typography variant="h6">Function Name</Typography>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          {functionName}
+        </Typography>
+        <Typography variant="h6">Arguments</Typography>
+        <Box component="ul" sx={{ listStyleType: 'none', pl: 0 }}>
+          {Object.entries(args).map(([key, value]) => (
+            <Box component="li" key={key} sx={{ mb: 1 }}>
+              <Typography variant="body1">
+                <strong>{key}:</strong> {JSON.stringify(value)}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    );
+  };
+
+
 export default function ToolNodesPage() {
     const [toolNodes, setToolNodes] = useState<OpenAI.ChatCompletionTool[]>([]);
     const [newNodeSchema, setNewNodeSchema] = useState(defaultSchema);
@@ -225,8 +255,7 @@ export default function ToolNodesPage() {
                     {/* Decision Output */}
                     {decision && (
                         <Box sx={{ marginTop: '1rem', flexShrink: 0}}>
-                            <Typography variant="h6">Decision:</Typography>
-                            <pre>{JSON.stringify(decision, null, 2)}</pre>
+                            <DecisionDisplay decision={decision.data} />
                             {/* Feedback Buttons */}
                             <Box sx={{ marginTop: '1rem',
                                 maxWidth: '100%',

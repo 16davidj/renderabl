@@ -17,7 +17,7 @@ const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = require("react");
 const material_1 = require("@mui/material");
 const Add_1 = __importDefault(require("@mui/icons-material/Add"));
-const Delete_1 = __importDefault(require("@mui/icons-material/Delete"));
+const icons_material_1 = require("@mui/icons-material"); // Import Material-UI's Delete icon
 function getContextData() {
     return __awaiter(this, void 0, void 0, function* () {
         const response = yield fetch(`http://localhost:5500/api/getContext`, {
@@ -124,7 +124,12 @@ function ContextTab() {
                     flexDirection: 'row',
                     alignItems: 'center',
                     gap: 2,
-                }, children: [(0, jsx_runtime_1.jsx)(material_1.TextField, { label: "Key", variant: "outlined", value: key, onChange: (e) => changeKey(key, e.target.value), sx: { flex: '0 0 30%' } }), (0, jsx_runtime_1.jsx)(material_1.TextField, { label: "Values", variant: "outlined", value: value.join(', '), onChange: (e) => changeValue(key, e.target.value), fullWidth: true }), (0, jsx_runtime_1.jsx)(material_1.IconButton, { color: "secondary", onClick: () => deleteKvPair(key), children: (0, jsx_runtime_1.jsx)(Delete_1.default, {}) })] }, keyIndex))), (0, jsx_runtime_1.jsxs)(material_1.Box, { sx: {
+                }, children: [(0, jsx_runtime_1.jsx)(material_1.TextField, { label: "Key", variant: "outlined", value: key, onChange: (e) => changeKey(key, e.target.value), sx: { flex: '0 0 30%' } }), (0, jsx_runtime_1.jsx)(material_1.TextField, { label: "Values", variant: "outlined", value: value.join(', '), onChange: (e) => changeValue(key, e.target.value), fullWidth: true }), (0, jsx_runtime_1.jsx)(material_1.IconButton, { sx: {
+                            backgroundColor: '#fff',
+                            '&:hover': {
+                                backgroundColor: '#f0f0f0',
+                            },
+                        }, onClick: () => deleteKvPair(key), children: (0, jsx_runtime_1.jsx)(icons_material_1.Delete, {}) })] }, keyIndex))), (0, jsx_runtime_1.jsxs)(material_1.Box, { sx: {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',

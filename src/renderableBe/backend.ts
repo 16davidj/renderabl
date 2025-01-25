@@ -106,7 +106,7 @@ async function getFunctionCallDecisionMessage(req:Request, res:Response) {
     const toolCall = parsedOutput.choices[0].message.tool_calls[0];
     const functionName = toolCall.function.name;
     const args = JSON.parse(toolCall.function.arguments);
-    return res.status(200).json({ message: "Function chosen: " + functionName + " with arguments: " + JSON.stringify(args) });
+    return res.status(200).json({ data : {functionName, args} });
   }
 }
 
