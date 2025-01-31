@@ -297,6 +297,7 @@ function golfTournamentAgent(args) {
 }
 function golfBallAgent(args) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log("hello", args);
         let ball = args.ball;
         if (!args.ball) {
             console.error("Golf ball name is required");
@@ -367,18 +368,18 @@ function agentDeciderAndRunner(response, prompt) {
             const functionName = toolCall.function.name;
             const args = JSON.parse(toolCall.function.arguments);
             console.log("Function Name: " + functionName + " with arguments: " + JSON.stringify(args));
-            switch (functionName) {
-                case "chatAgent":
+            switch (functionName.toLowerCase()) {
+                case "chatagent":
                     return chatAgent(args);
-                case "personAgent":
+                case "personagent":
                     return personAgent(args.person);
-                case "golfPlayerAgent":
+                case "golfplayeragent":
                     return golfPlayerAgent(args);
-                case "golfTournamentAgent":
+                case "golftournamentagent":
                     return golfTournamentAgent(args);
-                case "jobQueryAgent":
+                case "jobqueryagent":
                     return jobQueryAgent(args);
-                case "golfBallAgent":
+                case "golfballagent":
                     return golfBallAgent(args);
             }
         }

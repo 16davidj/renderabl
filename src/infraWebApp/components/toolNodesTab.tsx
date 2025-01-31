@@ -7,7 +7,7 @@ import ReactJsonPrettify from 'react-json-prettify';
 
 const defaultSchema = `{
     "agentName": "SampleAgent",
-    "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"field1":{"type":"string"}, "field2":{"type":"string"}}, "required":["field1"], "additionalProperties": false},
+    "agentArgs": {"type":"object","properties":{"field1":{"type":"string"}, "field2":{"type":"string"}}, "required":["field1"], "additionalProperties": false},
     "agentDescription": "Insert description here"
 }`;
 

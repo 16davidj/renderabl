@@ -21,15 +21,12 @@ const material_2 = require("@mui/material"); // Import the loading spinner
 const react_json_prettify_1 = __importDefault(require("react-json-prettify"));
 const defaultSchema = `{
     "agentName": "SampleAgent",
-    "agentArgs": {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"field1":{"type":"string"}, "field2":{"type":"string"}}, "required":["field1"], "additionalProperties": false},
+    "agentArgs": {"type":"object","properties":{"field1":{"type":"string"}, "field2":{"type":"string"}}, "required":["field1"], "additionalProperties": false},
     "agentDescription": "Insert description here"
 }`;
 const DecisionDisplay = ({ decision }) => {
     const { functionName, args } = decision;
-    console.log(JSON.stringify(decision));
-    console.log(functionName);
-    console.log(JSON.stringify(args));
-    return ((0, jsx_runtime_1.jsxs)(material_1.Box, { children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", children: "Function Name:" }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body1", sx: { mb: 2 }, children: functionName }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", children: "Arguments:" }), (0, jsx_runtime_1.jsx)(material_1.Box, { component: "ul", sx: { listStyleType: 'none', pl: 0 }, children: Object.entries(args).map(([key, value]) => ((0, jsx_runtime_1.jsx)(material_1.Box, { component: "li", sx: { mb: 1 }, children: (0, jsx_runtime_1.jsxs)(material_1.Typography, { variant: "body1", children: [(0, jsx_runtime_1.jsxs)("strong", { children: [key, ":"] }), " ", JSON.stringify(value)] }) }, key))) })] }));
+    return ((0, jsx_runtime_1.jsxs)(material_1.Box, { children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", children: "Function Name" }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "body1", sx: { mb: 2 }, children: functionName }), (0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", children: "Arguments" }), (0, jsx_runtime_1.jsx)(material_1.Box, { component: "ul", sx: { listStyleType: 'none', pl: 0 }, children: Object.entries(args).map(([key, value]) => ((0, jsx_runtime_1.jsx)(material_1.Box, { component: "li", sx: { mb: 1 }, children: (0, jsx_runtime_1.jsxs)(material_1.Typography, { variant: "body1", children: [(0, jsx_runtime_1.jsxs)("strong", { children: [key, ":"] }), " ", JSON.stringify(value)] }) }, key))) })] }));
 };
 function ToolNodesPage() {
     const [toolNodes, setToolNodes] = (0, react_1.useState)([]);
@@ -104,7 +101,6 @@ function ToolNodesPage() {
                 body: JSON.stringify({ prompt }),
             });
             const data = yield res.json();
-            console.log(JSON.stringify(data));
             setDecision(data);
         }
         catch (error) {
