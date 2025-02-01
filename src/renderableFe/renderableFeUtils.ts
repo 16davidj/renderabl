@@ -76,7 +76,6 @@ export const generateToolNode = async (agentName : string, agentDescription : st
     {} as Record<string, any>
   );
 
-  console.log(JSON.stringify(normalizedAgentProperties))
 
   try {
     agentRelevantContext = Object.fromEntries(
@@ -84,7 +83,6 @@ export const generateToolNode = async (agentName : string, agentDescription : st
         .map(([key, value]) => [key.trim().toLowerCase(), value]) // Normalize contextData keys
         .filter(([key]) => key && typeof key === "string" && key in normalizedAgentProperties)
     );
-    console.log(JSON.stringify(agentRelevantContext))
   } catch (error) {
     console.error("Error processing agentRelevantContext:", error);
   }
