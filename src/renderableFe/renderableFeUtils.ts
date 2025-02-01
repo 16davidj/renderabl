@@ -66,12 +66,27 @@ export const generateToolNode = async (agentName : string, agentDescription : st
 
   let agentRelevantContext : Record<string, string[]>;
   const agentProperties : Record<string, any> = agentArgs.properties;
+  
+  // Normalize agentProperties keys for case-insensitive comparison
+  const normalizedAgentProperties = Object.keys(agentProperties).reduce(
+    (acc, key) => {
+      acc[key.trim().toLowerCase()] = agentProperties[key];
+      return acc;
+    },
+    {} as Record<string, any>
+  );
+
+  console.log(JSON.stringify(normalizedAgentProperties))
+
   try {
     agentRelevantContext = Object.fromEntries(
-      Object.entries(contextData).filter(([key]) => key in agentProperties)
+      Object.entries(contextData)
+        .map(([key, value]) => [key.trim().toLowerCase(), value]) // Normalize contextData keys
+        .filter(([key]) => key && typeof key === "string" && key in normalizedAgentProperties)
     );
+    console.log(JSON.stringify(agentRelevantContext))
   } catch (error) {
-    console.error("Could not get agent relevant context from agent properties: ", error);
+    console.error("Error processing agentRelevantContext:", error);
   }
 
   const description = Object.keys(agentRelevantContext).length > 0 ? agentDescription + "For context, the parameters specified for the function call can take in the following values:"

@@ -361,7 +361,7 @@ async function agentDeciderAndRunner(response : OpenAI.Chat.Completions.ChatComp
     const functionName = toolCall.function.name;
     const args = JSON.parse(toolCall.function.arguments);
     console.log("Function Name: " + functionName + " with arguments: " + JSON.stringify(args));
-    switch (functionName.toLowerCase()) {
+    switch (functionName.trim().toLowerCase()) {
       case "chatagent":
         return chatAgent(args);
       case "personagent":

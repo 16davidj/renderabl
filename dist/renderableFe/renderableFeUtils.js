@@ -79,6 +79,8 @@ const generateToolNode = (agentName, agentDescription, agentArgs, contextDataJso
     let agentRelevantContext;
     const agentProperties = agentArgs.properties;
     try {
+        console.log(JSON.stringify(contextData));
+        console.log(JSON.stringify(agentProperties));
         agentRelevantContext = Object.fromEntries(Object.entries(contextData).filter(([key]) => key in agentProperties));
     }
     catch (error) {
