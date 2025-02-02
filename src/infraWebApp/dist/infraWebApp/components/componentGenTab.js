@@ -45,6 +45,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = __importStar(require("react"));
 const material_1 = require("@mui/material");
+const material_2 = require("@mui/material");
 const Babel = __importStar(require("@babel/standalone"));
 const defaultSchema = `{
     "agentName": "SampleAgent",
@@ -56,8 +57,10 @@ const ComponentGenerator = () => {
     const [jsonSchema, setJsonSchema] = (0, react_1.useState)(defaultSchema);
     const [generatedCode, setGeneratedCode] = (0, react_1.useState)("");
     const [renderOutput, setRenderOutput] = (0, react_1.useState)(null);
+    const [isGeneratorLoading, setIsGeneratorLoading] = (0, react_1.useState)(false);
     const handleGenerate = () => __awaiter(void 0, void 0, void 0, function* () {
         try {
+            setIsGeneratorLoading(true);
             const response = yield fetch("http://localhost:5500/api/generateComponent", {
                 method: "POST",
                 headers: {
@@ -84,19 +87,17 @@ const ComponentGenerator = () => {
         catch (error) {
             console.error("Error generating component:", error);
         }
+        finally {
+            setIsGeneratorLoading(false);
+        }
     });
-    return ((0, jsx_runtime_1.jsx)(material_1.Box, { padding: 2, children: (0, jsx_runtime_1.jsxs)(material_1.Grid, { container: true, spacing: 2, children: [(0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 6, children: (0, jsx_runtime_1.jsxs)(material_1.Paper, { elevation: 3, style: { padding: "16px" }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", gutterBottom: true, children: "JSON Schema Input" }), (0, jsx_runtime_1.jsx)(material_1.TextField, { fullWidth: true, multiline: true, rows: 20, value: jsonSchema, onChange: (e) => setJsonSchema(e.target.value), variant: "outlined" }), (0, jsx_runtime_1.jsx)(material_1.Box, { marginTop: 2, children: (0, jsx_runtime_1.jsx)(material_1.Button, { variant: "contained", color: "primary", onClick: handleGenerate, children: "Generate Component" }) })] }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 6, children: (0, jsx_runtime_1.jsxs)(material_1.Grid, { container: true, spacing: 2, children: [(0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, children: (0, jsx_runtime_1.jsxs)(material_1.Paper, { elevation: 3, style: { padding: "16px" }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", gutterBottom: true, children: "Generated Code" }), (0, jsx_runtime_1.jsx)(material_1.Box, { component: "pre", style: {
-                                                backgroundColor: "#f4f4f4",
-                                                padding: "16px",
-                                                borderRadius: "4px",
-                                                overflowX: "auto",
-                                                maxHeight: "400px",
-                                            }, children: generatedCode || "Your generated code will appear here." })] }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, children: (0, jsx_runtime_1.jsxs)(material_1.Paper, { elevation: 3, style: { padding: "16px" }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", gutterBottom: true, children: "Rendered Output" }), (0, jsx_runtime_1.jsx)(material_1.Box, { style: {
-                                                border: "1px solid #ddd",
-                                                padding: "16px",
-                                                borderRadius: "4px",
-                                                minHeight: "100px",
-                                            }, children: renderOutput || "Your rendered component will appear here." })] }) })] }) })] }) }));
+    return ((0, jsx_runtime_1.jsx)(material_1.Box, { padding: 2, children: (0, jsx_runtime_1.jsxs)(material_1.Grid, { container: true, spacing: 2, children: [(0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 6, children: (0, jsx_runtime_1.jsxs)(material_1.Paper, { elevation: 3, style: { padding: "16px" }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", gutterBottom: true, children: "JSON Schema Input" }), (0, jsx_runtime_1.jsx)(material_1.TextField, { fullWidth: true, multiline: true, rows: 20, value: jsonSchema, onChange: (e) => setJsonSchema(e.target.value), variant: "outlined" }), (0, jsx_runtime_1.jsx)(material_1.Box, { marginTop: 2, children: (0, jsx_runtime_1.jsx)(material_1.Button, { variant: "contained", color: "primary", onClick: handleGenerate, disabled: isGeneratorLoading, children: isGeneratorLoading ? (0, jsx_runtime_1.jsx)(material_2.CircularProgress, { size: 24 }) : 'Generate Component' }) })] }) }), (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, md: 6, children: (0, jsx_runtime_1.jsx)(material_1.Grid, { container: true, spacing: 2, children: (0, jsx_runtime_1.jsx)(material_1.Grid, { item: true, xs: 12, children: (0, jsx_runtime_1.jsxs)(material_1.Paper, { elevation: 3, style: { padding: "16px" }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", gutterBottom: true, children: "Generated Code" }), (0, jsx_runtime_1.jsx)(material_1.Box, { component: "pre", style: {
+                                            backgroundColor: "#f4f4f4",
+                                            padding: "16px",
+                                            borderRadius: "4px",
+                                            overflowX: "auto",
+                                            maxHeight: "400px",
+                                        }, children: generatedCode || "Your generated code will appear here." })] }) }) }) })] }) }));
 };
 exports.default = ComponentGenerator;
 //# sourceMappingURL=componentGenTab.js.map

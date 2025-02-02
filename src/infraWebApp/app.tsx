@@ -33,6 +33,9 @@ export default function App() {
                     <ListItemButton onClick={() => setSelectedTab(2)}>
                         <ListItemText primary="Component Generator" />
                     </ListItemButton>
+                    <ListItemButton onClick={() => setSelectedTab(3)}>
+                        <ListItemText primary="Analytics Dashboard (TBD)" />
+                    </ListItemButton>
                 </List>
             </Drawer>
 

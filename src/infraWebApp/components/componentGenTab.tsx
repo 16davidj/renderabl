@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Grid, Paper, Typography } from "@mui/material";
+import { CircularProgress } from '@mui/material';
 import * as Babel from "@babel/standalone";
 
 const defaultSchema = `{
@@ -14,9 +15,11 @@ const ComponentGenerator: React.FC = () => {
     const [jsonSchema, setJsonSchema] = useState(defaultSchema);
     const [generatedCode, setGeneratedCode] = useState("");
     const [renderOutput, setRenderOutput] = useState<React.ReactNode>(null);
+    const [isGeneratorLoading, setIsGeneratorLoading] = useState(false);
 
     const handleGenerate = async () => {
         try {
+            setIsGeneratorLoading(true);
             const response = await fetch("http://localhost:5500/api/generateComponent", {
                 method: "POST",
                 headers: {
@@ -45,6 +48,8 @@ const ComponentGenerator: React.FC = () => {
             }
         } catch (error) {
             console.error("Error generating component:", error);
+        } finally {
+            setIsGeneratorLoading(false);
         }
     };
 
@@ -69,8 +74,9 @@ const ComponentGenerator: React.FC = () => {
                                 variant="contained"
                                 color="primary"
                                 onClick={handleGenerate}
+                                disabled={isGeneratorLoading}
                             >
-                                Generate Component
+                               {isGeneratorLoading ? <CircularProgress size={24} /> : 'Generate Component' }
                             </Button>
                         </Box>
                     </Paper>
@@ -93,23 +99,6 @@ const ComponentGenerator: React.FC = () => {
                                     }}
                                 >
                                     {generatedCode || "Your generated code will appear here."}
-                                </Box>
-                            </Paper>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Paper elevation={3} style={{ padding: "16px" }}>
-                                <Typography variant="h6" gutterBottom>
-                                    Rendered Output
-                                </Typography>
-                                <Box
-                                    style={{
-                                        border: "1px solid #ddd",
-                                        padding: "16px",
-                                        borderRadius: "4px",
-                                        minHeight: "100px",
-                                    }}
-                                >
-                                    {renderOutput || "Your rendered component will appear here."}
                                 </Box>
                             </Paper>
                         </Grid>

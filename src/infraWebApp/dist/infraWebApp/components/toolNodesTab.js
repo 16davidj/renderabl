@@ -16,8 +16,8 @@ exports.default = ToolNodesPage;
 const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = require("react");
 const material_1 = require("@mui/material");
-const icons_material_1 = require("@mui/icons-material"); // Import Material-UI's Delete icon
-const material_2 = require("@mui/material"); // Import the loading spinner
+const icons_material_1 = require("@mui/icons-material");
+const material_2 = require("@mui/material");
 const react_json_prettify_1 = __importDefault(require("react-json-prettify"));
 const defaultSchema = `{
     "agentName": "SampleAgent",
@@ -111,7 +111,7 @@ function ToolNodesPage() {
             setFeedbackGiven(false);
         }
     });
-    return ((0, jsx_runtime_1.jsxs)(material_1.Container, { maxWidth: "xl", style: { marginTop: '2rem' }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h4", gutterBottom: true, children: "Tool Nodes Interface" }), (0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { border: '1px solid #ccc', padding: '1rem', marginBottom: '2rem' }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", gutterBottom: true, children: "Tool Nodes" }), (0, jsx_runtime_1.jsx)(material_1.Box, { sx: {
+    return ((0, jsx_runtime_1.jsxs)(material_1.Container, { maxWidth: "xl", style: { marginTop: '2rem' }, children: [(0, jsx_runtime_1.jsxs)(material_1.Box, { sx: { border: '1px solid #ccc', padding: '1rem', marginBottom: '2rem' }, children: [(0, jsx_runtime_1.jsx)(material_1.Typography, { variant: "h6", gutterBottom: true, children: "Tool Nodes" }), (0, jsx_runtime_1.jsx)(material_1.Box, { sx: {
                             display: 'flex',
                             gap: '1rem',
                             overflowX: 'auto',

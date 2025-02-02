@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Box, Button, TextField, Typography, Container, IconButton } from '@mui/material';
-import { Delete } from '@mui/icons-material'; // Import Material-UI's Delete icon
+import { Delete } from '@mui/icons-material';
 import OpenAI from 'openai';
-import { CircularProgress } from '@mui/material'; // Import the loading spinner
+import { CircularProgress } from '@mui/material';
 import ReactJsonPrettify from 'react-json-prettify';
 
 const defaultSchema = `{
@@ -137,10 +137,6 @@ export default function ToolNodesPage() {
 
     return (
         <Container maxWidth="xl" style={{ marginTop: '2rem' }}>
-            <Typography variant="h4" gutterBottom>
-                Tool Nodes Interface
-            </Typography>
-            
             {/* Top Half: Tool Nodes Shelf */}
             <Box sx={{ border: '1px solid #ccc', padding: '1rem', marginBottom: '2rem' }}>
                 <Typography variant="h6" gutterBottom>

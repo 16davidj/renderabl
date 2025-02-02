@@ -109,9 +109,6 @@ export default function ContextTab() {
 
     return (
         <Container maxWidth="xl" style={{ marginTop: '2rem' }}>
-            <Typography variant="h4" gutterBottom>
-                Context Data
-            </Typography>
             {[...tempData.entries()].map(([key, value], keyIndex) => (
                 <Box
                     key={keyIndex}
